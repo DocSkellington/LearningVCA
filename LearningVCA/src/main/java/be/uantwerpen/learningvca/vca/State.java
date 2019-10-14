@@ -10,6 +10,7 @@ import net.automatalib.words.VPDAlphabet;
  * A state (or location in LearnLib nomenclature) in a VCA.
  * 
  * It stores whether the state is final and the transition functions for this state
+ * @author Gaëtan Staquet
  */
 public class State {
     private boolean isAccepting;

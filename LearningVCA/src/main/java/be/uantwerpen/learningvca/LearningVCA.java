@@ -1,134 +1,85 @@
 package be.uantwerpen.learningvca;
 
-import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
 
-import de.learnlib.algorithms.dhc.mealy.MealyDHC;
-import de.learnlib.algorithms.lstar.dfa.ClassicLStarDFA;
-import de.learnlib.algorithms.lstar.dfa.ClassicLStarDFABuilder;
-import de.learnlib.api.oracle.MembershipOracle;
-import de.learnlib.api.oracle.MembershipOracle.DFAMembershipOracle;
+import be.uantwerpen.learningvca.behaviorgraph.BehaviorGraph;
+import be.uantwerpen.learningvca.learner.LearnerVCA;
+import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
+import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
+import be.uantwerpen.learningvca.vca.State;
+import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.query.DefaultQuery;
-import de.learnlib.datastructure.observationtable.OTUtils;
-import de.learnlib.datastructure.observationtable.writer.ObservationTableASCIIWriter;
-import de.learnlib.filter.cache.mealy.MealyCaches;
-import de.learnlib.filter.statistic.oracle.CounterOracle.DFACounterOracle;
-import de.learnlib.oracle.equivalence.SimulatorEQOracle;
-import de.learnlib.oracle.equivalence.WMethodEQOracle.DFAWMethodEQOracle;
 import de.learnlib.oracle.membership.SimulatorOracle;
-import de.learnlib.oracle.membership.SimulatorOracle.DFASimulatorOracle;
-import de.learnlib.util.Experiment.DFAExperiment;
-import de.learnlib.util.statistics.SimpleProfiler;
-import de.learnlib.examples.mealy.ExampleCoffeeMachine;
-import de.learnlib.examples.mealy.ExampleCoffeeMachine.Input;
-import net.automatalib.automata.fsa.DFA;
-import net.automatalib.automata.fsa.impl.compact.CompactDFA;
-import net.automatalib.automata.transducers.impl.compact.CompactMealy;
-import net.automatalib.serialization.dot.GraphDOT;
-import net.automatalib.util.automata.builders.AutomatonBuilders;
-import net.automatalib.visualization.Visualization;
-import net.automatalib.words.Alphabet;
-import net.automatalib.words.Word;
-import net.automatalib.words.impl.Alphabets;
+import net.automatalib.words.VPDAlphabet;
+import net.automatalib.words.impl.DefaultVPDAlphabet;
 
 /**
- * Hello world!
- *
+ * The main class
+ * @author Gaëtan Staquet
  */
-public class LearningVCA 
-{
-    private static final int EXPLORATION_DEPTH = 4;
-
+public class LearningVCA {
     private LearningVCA() {
 
     }
 
     public static void main( String[] args )
     {
-        CompactMealy<Input, String> fm = ExampleCoffeeMachine.constructMachine();
-        Alphabet<Input> alphabet = fm.getInputAlphabet();
+        VCA<Character> sul = getSUL();
+        VPDAlphabet<Character> alphabet = sul.getAlphabet();
+        BehaviorGraph<Character> behaviorGraph = getBG(alphabet);
 
-        SimulatorOracle<Input, Word<String>> simoracle = new SimulatorOracle<>(fm);
-        SimulatorEQOracle<Input, Word<String>> eqoracle = new SimulatorEQOracle<>(fm);
+        SimulatorOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(sul);
+        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(behaviorGraph);
+        EquivalenceVCAOracle<Character>     equivalenceVCAOracle = new EquivalenceVCAOracle<>(sul);
 
-        MembershipOracle<Input, Word<String>> cache = MealyCaches.createCache(alphabet, simoracle);
+        LearnerVCA<Character> learner = new LearnerVCA<>(membershipOracle, partialEquivalenceOracle);
 
-        MealyDHC<Input, String> learner = new MealyDHC<>(alphabet, cache);
+        DefaultQuery<Character, Boolean> counterexample = null;
 
-        DefaultQuery<Input, Word<String>> counterexample = null;
         do {
             if (counterexample == null) {
                 learner.startLearning();
-            } else {
-                boolean refined = learner.refineHypothesis(counterexample);
-                if (!refined) {
-                    System.err.println("No refinement effected by counterexample!");
-                }
+            }
+            else {
+                learner.refineHypothesis(counterexample);
             }
 
-            counterexample = eqoracle.findCounterExample(learner.getHypothesisModel(), alphabet);
-
+            counterexample = equivalenceVCAOracle.findCounterExample(learner.getHypothesisModel(), alphabet);
         } while (counterexample != null);
 
-        CompactMealy<Input, String> result = learner.getHypothesisModel();
-
-        // profiling
-        System.out.println(SimpleProfiler.getResults());
-
-        // learning statistics
-        // System.out.println(experiment.getRounds().getSummary());
-        // System.out.println(mqOracle.getStatisticalData().getSummary());
-
-        // model statistics
-        System.out.println("States: " + result.size());
-        // System.out.println("Sigma: " + inputs.size());
-
-        // show model
-        System.out.println();
-        System.out.println("Model: ");
-        // try {
-        //     GraphDOT.write(result, inputs, System.out); // may throw IOException!
-        // }
-        // catch (IOException exception) {
-        //     exception.printStackTrace();
-        // }
-
-        // Visualization.visualize(result, inputs);
-
-        System.out.println("-------------------------------------------------------");
-
-        System.out.println("Final observation table:");
-        // new ObservationTableASCIIWriter<>().write(lstar.getObservationTable(), System.out);
-
-        // try {
-        //     OTUtils.displayHTMLInBrowser(lstar.getObservationTable());
-        // }
-        // catch (IOException exception) {
-        //     exception.printStackTrace();
-        // }
+        // TODO write the final VCA in DOT format
     }
 
-    private static CompactDFA<Character> constructSUL() {
-        // input alphabet contains characters 'a'..'b'
-        Alphabet<Character> sigma = Alphabets.characters('a', 'b');
+    /**
+     * Constructs a simple 1-VCA for L = {a^n b^n | n is a natural and n is not zero}
+     * @return A 1-VCA
+     */
+    private static VCA<Character> getSUL() {
+        List<Character> internalSymbols = Arrays.asList();
+        List<Character> callSymbols = Arrays.asList('a');
+        List<Character> returnSymbols = Arrays.asList('b');
 
-        // @formatter:off
-        // create automaton
-        return AutomatonBuilders.newDFA(sigma)
-                .withInitial("q0")
-                .from("q0")
-                    .on('a').to("q1")
-                    .on('b').to("q2")
-                .from("q1")
-                    .on('a').to("q0")
-                    .on('b').to("q3")
-                .from("q2")
-                    .on('a').to("q3")
-                    .on('b').to("q0")
-                .from("q3")
-                    .on('a').to("q2")
-                    .on('b').to("q1")
-                .withAccepting("q0")
-                .create();
-        // @formatter:on
+        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<Character>(internalSymbols, callSymbols, returnSymbols);
+        VCA<Character> vca = new VCA<>(alphabet, 1);
+
+        State q0 = vca.addInitialState(true);
+        State q1 = vca.addState(true);
+
+        vca.setCallSuccessor(q0, 0, 'a', q0);
+        vca.setCallSuccessor(q0, 1, 'a', q1);
+        vca.setReturnSuccessor(q0, 1, 'b', q1);
+        vca.setReturnSuccessor(q1, 1, 'b', q1);
+
+        return vca;
+    }
+
+    /**
+     * Constructs the behavior graph for L = {a^n b^n  | n is a natural and n is not zero}
+     * @return The behavior graph
+     */
+    private static BehaviorGraph<Character> getBG(VPDAlphabet<Character> alphabet) {
+        // TODO
+        return null;
     }
 }

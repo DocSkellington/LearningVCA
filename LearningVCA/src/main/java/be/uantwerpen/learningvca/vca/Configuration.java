@@ -3,6 +3,7 @@ package be.uantwerpen.learningvca.vca;
 /**
  * A configuration (or state in LearnLib nomenclature) is a pair (location, counter value).
  * @param <L> The type of the location
+ * @author Gaëtan Staquet
  */
 public class Configuration<L> {
     private final static Configuration<?> SINK = new Configuration<>(null, null);
