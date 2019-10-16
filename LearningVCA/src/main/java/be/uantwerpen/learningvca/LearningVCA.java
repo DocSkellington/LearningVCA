@@ -4,6 +4,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import be.uantwerpen.learningvca.behaviorgraph.BehaviorGraph;
+import be.uantwerpen.learningvca.behaviorgraph.Description;
+import be.uantwerpen.learningvca.behaviorgraph.TauMapping;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
 import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
@@ -79,7 +81,26 @@ public class LearningVCA {
      * @return The behavior graph
      */
     private static BehaviorGraph<Character> getBG(VPDAlphabet<Character> alphabet) {
-        // TODO
-        return null;
+        TauMapping<Character> tau0 = new TauMapping<>(2);
+        tau0.addTransition(1, 'a', 1);
+        // tau0.addTransition(2, 'a', 3);
+        // tau0.addTransition(3, 'a', 3);
+
+        TauMapping<Character> tau1 = new TauMapping<>(2);
+        tau1.addTransition(1, 'a', 1);
+        tau1.addTransition(1, 'b', 2);
+        // tau1.addTransition(2, 'a', 3);
+        tau1.addTransition(2, 'b', 2);
+        // tau1.addTransition(3, 'a', 3);
+        // tau1.addTransition(3, 'b', 3);
+
+        Description<Character> description = new Description<>(1, 1);
+        description.addTauMappings(Arrays.asList(tau0, tau1));
+        
+        BehaviorGraph<Character> bg = new BehaviorGraph<>(alphabet, description);
+        bg.setInitialState(0, 1);
+        bg.addAcceptingState(0, 1);
+        bg.addAcceptingState(0, 2);
+        return bg;
     }
 }

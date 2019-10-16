@@ -8,7 +8,7 @@ import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.words.VPDAlphabet;
 
 /**
- * The behavior graph of a visibly one-counter language
+ * The behavior graph of a visibly one-counter language.
  * @param <I> Input alphabet type
  * @author Gaëtan Staquet
  */
@@ -59,18 +59,45 @@ public class BehaviorGraph<I extends Comparable<I>> {
         this.acceptingStates = new HashSet<>();
     }
     
+    /**
+     * Sets the initial state of the behavior graph.
+     * 
+     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
+     * @param mapping The index of the mapping
+     * @param equivalenceClass The number associated with the equivalence class
+     */
     public void setInitialState(int mapping, int equivalenceClass) {
         this.initialState = new State(mapping, equivalenceClass);
     }
 
+    /**
+     * Adds an accepting state of the behavior graph.
+     * 
+     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
+     * @param mapping The index of the mapping
+     * @param equivalenceClass The number associated with the equivalence class
+     */
     public void addAcceptingState(int mapping, int equivalenceClass) {
         this.acceptingStates.add(new State(mapping, equivalenceClass));
     }
 
+    /**
+     * Checks if a state is accepting.
+     * 
+     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
+     * @param mapping The index of the mapping
+     * @param equivalenceClass The number associated with the equivalence class
+     * @return True iff the state is accepting
+     */
     public boolean isAcceptingState(int mapping, int equivalenceClass) {
         return isAcceptingState(new State(mapping, equivalenceClass));
     }
 
+    /**
+     * Checks if a state is accepting.
+     * @param state The state
+     * @return True iff the state is accepting
+     */
     private boolean isAcceptingState(State state) {
         return this.acceptingStates.contains(state);
     }
