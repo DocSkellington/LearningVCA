@@ -15,7 +15,7 @@ import net.automatalib.automata.fsa.impl.compact.CompactDFA;
  * @param <I> Input alphabet type
  * @author Gaëtan Staquet
  */
-public class PartialEquivalenceOracle<I> {
+public class PartialEquivalenceOracle<I extends Comparable<I>> {
     private BehaviorGraph<I> behaviorGraph;
 
     public PartialEquivalenceOracle(BehaviorGraph<I> behaviorGraph) {

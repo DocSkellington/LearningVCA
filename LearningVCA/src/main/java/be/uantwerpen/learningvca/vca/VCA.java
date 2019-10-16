@@ -1,9 +1,11 @@
 package be.uantwerpen.learningvca.vca;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.ts.acceptors.DeterministicAcceptorTS;
@@ -162,14 +164,16 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
     // For SuffixOutput
     @Override
     public Collection<Configuration<State>> getTransitions(Configuration<State> state, I input) {
-        // TODO Auto-generated method stub
-        return null;
+        ArrayList<Configuration<State>> transitions = new ArrayList<>(1);
+        transitions.add(getTransition(state, input));
+        return transitions;
     }
 
     @Override
     public Set<Configuration<State>> getInitialStates() {
-        // TODO Auto-generated method stub
-        return null;
+        TreeSet<Configuration<State>> states = new TreeSet<>();
+        states.add(getInitialState());
+        return states;
     }
 
     @Override

@@ -10,7 +10,7 @@ import net.automatalib.words.Alphabet;
  * @param <I> Input alphabet type
  * @author Gaëtan Staquet
  */
-public class LimitedBehaviorGraph<I> extends CompactDFA<I> {
+public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I> {
     private static final long serialVersionUID = 5195494200755637801L;
 
     private final int threshold;

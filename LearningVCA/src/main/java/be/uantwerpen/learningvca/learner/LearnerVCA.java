@@ -16,7 +16,7 @@ import de.learnlib.api.query.DefaultQuery;
  * @param <I>
  * @author Gaëtan Staquet
  */
-public class LearnerVCA<I> implements LearningAlgorithm<VCA<I>, I, Boolean> {
+public class LearnerVCA<I extends Comparable<I>> implements LearningAlgorithm<VCA<I>, I, Boolean> {
     private final MembershipOracle<I, Boolean> membershipOracle;
     private final PartialEquivalenceOracle<I> partialEquivalenceOracle;
     private List<Description<I>> descriptions;

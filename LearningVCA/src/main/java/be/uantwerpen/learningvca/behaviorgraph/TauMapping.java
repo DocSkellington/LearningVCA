@@ -1,8 +1,8 @@
 package be.uantwerpen.learningvca.behaviorgraph;
 
 import java.security.InvalidParameterException;
-import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * A mapping tau maps (state, input) to state, in a behavior graph.
@@ -12,23 +12,36 @@ import java.util.Map;
  * @param <I> Input alphabet type
  * @author Gaëtan Staquet
  */
-public class TauMapping<I> {
+public class TauMapping<I extends Comparable<I>> {
     /**
      * A key in the mapping.
      * 
      * A key is a pair (state id, input)
      */
-    protected class MappingKey {
+    protected class KeyMapping implements Comparable<KeyMapping> {
         public final int index;
         public final I input;
 
-        public MappingKey(int index, I input) {
+        public KeyMapping(int index, I input) {
             this.index = index;
             this.input = input;
         }
+
+        @Override
+        public int compareTo(TauMapping<I>.KeyMapping o) {
+            if (o.index == this.index) {
+                return this.input.compareTo(o.input);
+            }
+            else if (o.index < this.index) {
+                return -1;
+            }
+            else {
+                return 1;
+            }
+        }
     }
 
-    private final Map<MappingKey, Integer> mapping;
+    private final Map<KeyMapping, Integer> mapping;
     private final int K;
 
     /**
@@ -36,7 +49,7 @@ public class TauMapping<I> {
      * @param width K
      */
     public TauMapping(int width) {
-        this.mapping = new HashMap<>();
+        this.mapping = new TreeMap<>();
         this.K = width;
     }
 
@@ -54,6 +67,22 @@ public class TauMapping<I> {
             throw new InvalidParameterException("Description of a behavior graph: target must be in [" + 1 + ", " + K + "]. Received: " + target);
         }
 
-        mapping.put(new MappingKey(start, input), target);
+        mapping.put(new KeyMapping(start, input), target);
+    }
+
+    public boolean hasTransition(int start, I input) {
+        if (!(1 <= start && start <= K)) {
+            throw new InvalidParameterException("Description of a behavior graph: start must be in [" + 1 + ", " + K + "]. Received: " + start);
+        }
+
+        return mapping.containsKey(new KeyMapping(start, input));
+    }
+
+    public int getTransition(int start, I input) {
+        if (!(1 <= start && start <= K)) {
+            throw new InvalidParameterException("Description of a behavior graph: start must be in [" + 1 + ", " + K + "]. Received: " + start);
+        }
+
+        return mapping.get(new KeyMapping(start, input));
     }
 }

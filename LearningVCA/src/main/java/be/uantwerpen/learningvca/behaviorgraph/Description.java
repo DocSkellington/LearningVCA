@@ -1,6 +1,8 @@
 package be.uantwerpen.learningvca.behaviorgraph;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import be.uantwerpen.learningvca.vca.VCA;
@@ -15,7 +17,7 @@ import be.uantwerpen.learningvca.vca.VCA;
  * @param <I> Input alphabet type
  * @author Gaëtan Staquet
  */
-public class Description<I> {
+public class Description<I extends Comparable<I>> {
     private final int m;
     private final int k;
     private final List<TauMapping<I>> tauMappings;
@@ -29,6 +31,10 @@ public class Description<I> {
         this.m = offset;
         this.k = period;
         this.tauMappings = new ArrayList<>(offset + period);
+    }
+
+    public void addTauMappings(Collection<TauMapping<I>> mappings) {
+        this.tauMappings.addAll(mappings);
     }
 
     /**
