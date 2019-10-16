@@ -1,7 +1,8 @@
 package be.uantwerpen.learningvca.behaviorgraph;
 
-import java.util.List;
-import java.util.LinkedList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
 
 import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.words.VPDAlphabet;
@@ -12,7 +13,7 @@ import net.automatalib.words.VPDAlphabet;
  * @author Gaëtan Staquet
  */
 public class BehaviorGraph<I extends Comparable<I>> {
-    protected class State {
+    private class State {
         public final int mapping;
         public final int equivalenceClass;
 
@@ -20,12 +21,33 @@ public class BehaviorGraph<I extends Comparable<I>> {
             this.mapping = mapping;
             this.equivalenceClass = equivalenceClass;
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+
+            if (obj.getClass() != getClass()) {
+                return false;
+            }
+            State o = (State)obj;
+            return o.equivalenceClass == this.equivalenceClass && o.mapping == this.mapping;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(mapping, equivalenceClass);
+        }
     };
 
     private final Description<I> description;
     private final VPDAlphabet<I> alphabet;
     private State initialState;
-    private List<State> acceptingStates;
+    private Collection<State> acceptingStates;
 
     /**
      * The constructor.
@@ -34,7 +56,7 @@ public class BehaviorGraph<I extends Comparable<I>> {
     public BehaviorGraph(VPDAlphabet<I> alphabet, Description<I> description) {
         this.description = description;
         this.alphabet = alphabet;
-        this.acceptingStates = new LinkedList<>();
+        this.acceptingStates = new HashSet<>();
     }
     
     public void setInitialState(int mapping, int equivalenceClass) {
@@ -43,6 +65,14 @@ public class BehaviorGraph<I extends Comparable<I>> {
 
     public void addAcceptingState(int mapping, int equivalenceClass) {
         this.acceptingStates.add(new State(mapping, equivalenceClass));
+    }
+
+    public boolean isAcceptingState(int mapping, int equivalenceClass) {
+        return isAcceptingState(new State(mapping, equivalenceClass));
+    }
+
+    private boolean isAcceptingState(State state) {
+        return this.acceptingStates.contains(state);
     }
 
     /**
@@ -60,7 +90,7 @@ public class BehaviorGraph<I extends Comparable<I>> {
      */
     public CompactDFA<I> toDFA(int threshold) {
         CompactDFA<I> dfa = new CompactDFA<>(alphabet);
-        toDFA(dfa, dfa.addInitialState(acceptingStates.contains(initialState)), threshold, 0, initialState.mapping, initialState.equivalenceClass, 0);
+        toDFA(dfa, dfa.addInitialState(isAcceptingState(initialState)), threshold, 0, initialState.mapping, initialState.equivalenceClass, 0);
         return dfa;
     }
     
@@ -75,11 +105,10 @@ public class BehaviorGraph<I extends Comparable<I>> {
      * @param numberOfLoops The number of time the recurring part has been traversed
      */
     private void toDFA(CompactDFA<I> dfa, int state, int threshold, int counterValue, int mapping, int equivalenceClass, int numberOfLoops) {
-        // TODO: handle loop on internal symbols
+        // TODO handle loop on internal symbols
         for (I a : alphabet) {
             // If there is no transition starting from equivalenceClass reading a, we skip a
             if (!description.getTauMappings().get(mapping).hasTransition(equivalenceClass, a)) {
-                System.out.println("No transition for " + mapping + " : " + equivalenceClass + " " + a);
                 continue;
             }
 
@@ -124,8 +153,7 @@ public class BehaviorGraph<I extends Comparable<I>> {
             int nextEquivalenceClass = description.getTauMappings().get(mapping).getTransition(equivalenceClass, a);
 
             // We add a new state in the DFA
-            System.out.println("Adding a state");
-            int newState = dfa.addState(acceptingStates.contains(new State(nextMapping, nextEquivalenceClass)));
+            int newState = dfa.addState(isAcceptingState(nextMapping, nextEquivalenceClass));
             // And we add the transition from state to newState
             dfa.addTransition(state, a, newState);
 

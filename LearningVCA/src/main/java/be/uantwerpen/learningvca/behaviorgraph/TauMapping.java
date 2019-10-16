@@ -2,6 +2,7 @@ package be.uantwerpen.learningvca.behaviorgraph;
 
 import java.security.InvalidParameterException;
 import java.util.Map;
+import java.util.Objects;
 import java.util.TreeMap;
 
 /**
@@ -25,6 +26,28 @@ public class TauMapping<I extends Comparable<I>> {
         public KeyMapping(int index, I input) {
             this.index = index;
             this.input = input;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (obj == null) {
+                return false;
+            }
+
+            if (obj.getClass() != getClass()) {
+                return false;
+            }
+
+            KeyMapping o = (KeyMapping)obj;
+            return o.index == index && o.input.equals(input);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(index, input);
         }
 
         @Override
