@@ -13,41 +13,8 @@ import net.automatalib.words.VPDAlphabet;
  * @author Gaëtan Staquet
  */
 public class BehaviorGraph<I extends Comparable<I>> {
-    private class State {
-        public final int mapping;
-        public final int equivalenceClass;
-
-        public State(int mapping, int equivalenceClass) {
-            this.mapping = mapping;
-            this.equivalenceClass = equivalenceClass;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-            if (obj == null) {
-                return false;
-            }
-
-            if (obj.getClass() != getClass()) {
-                return false;
-            }
-            State o = (State)obj;
-            return o.equivalenceClass == this.equivalenceClass && o.mapping == this.mapping;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(mapping, equivalenceClass);
-        }
-    };
-
     private final Description<I> description;
     private final VPDAlphabet<I> alphabet;
-    private State initialState;
-    private Collection<State> acceptingStates;
 
     /**
      * The constructor.
@@ -56,50 +23,6 @@ public class BehaviorGraph<I extends Comparable<I>> {
     public BehaviorGraph(VPDAlphabet<I> alphabet, Description<I> description) {
         this.description = description;
         this.alphabet = alphabet;
-        this.acceptingStates = new HashSet<>();
-    }
-    
-    /**
-     * Sets the initial state of the behavior graph.
-     * 
-     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
-     * @param mapping The index of the mapping
-     * @param equivalenceClass The number associated with the equivalence class
-     */
-    public void setInitialState(int mapping, int equivalenceClass) {
-        this.initialState = new State(mapping, equivalenceClass);
-    }
-
-    /**
-     * Adds an accepting state of the behavior graph.
-     * 
-     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
-     * @param mapping The index of the mapping
-     * @param equivalenceClass The number associated with the equivalence class
-     */
-    public void addAcceptingState(int mapping, int equivalenceClass) {
-        this.acceptingStates.add(new State(mapping, equivalenceClass));
-    }
-
-    /**
-     * Checks if a state is accepting.
-     * 
-     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
-     * @param mapping The index of the mapping
-     * @param equivalenceClass The number associated with the equivalence class
-     * @return True iff the state is accepting
-     */
-    public boolean isAcceptingState(int mapping, int equivalenceClass) {
-        return isAcceptingState(new State(mapping, equivalenceClass));
-    }
-
-    /**
-     * Checks if a state is accepting.
-     * @param state The state
-     * @return True iff the state is accepting
-     */
-    private boolean isAcceptingState(State state) {
-        return this.acceptingStates.contains(state);
     }
 
     /**
@@ -117,7 +40,8 @@ public class BehaviorGraph<I extends Comparable<I>> {
      */
     public CompactDFA<I> toDFA(int threshold) {
         CompactDFA<I> dfa = new CompactDFA<>(alphabet);
-        toDFA(dfa, dfa.addInitialState(isAcceptingState(initialState)), threshold, 0, initialState.mapping, initialState.equivalenceClass, 0);
+        StateBG initial = description.getInitialState();
+        toDFA(dfa, dfa.addInitialState(description.isAcceptingState(initial)), threshold, 0, initial.getMapping(), initial.getEquivalenceClass(), 0);
         return dfa;
     }
     
@@ -180,7 +104,7 @@ public class BehaviorGraph<I extends Comparable<I>> {
             int nextEquivalenceClass = description.getTauMappings().get(mapping).getTransition(equivalenceClass, a);
 
             // We add a new state in the DFA
-            int newState = dfa.addState(isAcceptingState(nextMapping, nextEquivalenceClass));
+            int newState = dfa.addState(description.isAcceptingState(nextMapping, nextEquivalenceClass));
             // And we add the transition from state to newState
             dfa.addTransition(state, a, newState);
 

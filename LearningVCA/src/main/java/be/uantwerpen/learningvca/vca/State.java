@@ -62,6 +62,13 @@ public class State {
     }
 
     /**
+     * @param isAccepting True iff the state is accepting
+     */
+    public void setIsAccepting(boolean isAccepting) {
+        this.isAccepting = isAccepting;
+    }
+
+    /**
      * Gets the successor of this state when reading the given call symbol with the given counter value.
      * @param callSymbolId The id of the call symbol in the alphabet
      * @param counterValue The counter value

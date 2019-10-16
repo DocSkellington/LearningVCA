@@ -52,6 +52,20 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
     }
 
     /**
+     * @return The size (number of states)
+     */
+    public int size() {
+        return states.size();
+    }
+
+    /**
+     * @return The list of states
+     */
+    public List<State> getStates() {
+        return states;
+    }
+
+    /**
      * Gets the threshold m of this m-VCA.
      * @return m
      */
@@ -72,6 +86,14 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
     }
 
     /**
+     * Adds a state that is not accepting.
+     * @return The state
+     */
+    public State addState() {
+        return addState(false);
+    }
+
+    /**
      * Adds a state.
      * @param accepting Whether the state is accepting
      * @return The state
@@ -80,6 +102,14 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
         State state = new State(getAlphabet(), m, accepting);
         states.add(state);
         return state;
+    }
+
+    /**
+     * Sets the initial state
+     * @param initialState The new initial state
+     */
+    public void setInitialState(State initialState) {
+        this.initialState = initialState;
     }
 
     /**

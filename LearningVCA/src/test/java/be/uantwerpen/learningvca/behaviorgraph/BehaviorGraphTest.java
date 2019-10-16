@@ -17,12 +17,12 @@ public class BehaviorGraphTest {
     @Test
     public void toDFAOneStateNoTransitions() {
         TauMapping<Character> tau0 = new TauMapping<>(1);
-        Description<Character> description = new Description<>(0, 1);
+        Description<Character> description = new Description<>(0, 1, 1);
         description.addTauMappings(Arrays.asList(tau0));
+        description.setInitialState(0, 1);
         VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList('a'), Arrays.asList(), Arrays.asList());
 
         BehaviorGraph<Character> bg = new BehaviorGraph<>(alphabet, description);
-        bg.setInitialState(0, 1);
 
         CompactDFA<Character> dfa = bg.toDFA(0);
 
@@ -31,35 +31,9 @@ public class BehaviorGraphTest {
         assertNull(dfa.getTransition(0, alphabet.getSymbolIndex('a')));
     }
 
-    private BehaviorGraph<Character> constructBGExample() {
-        TauMapping<Character> tau0 = new TauMapping<>(2);
-        tau0.addTransition(1, 'a', 1);
-        // tau0.addTransition(2, 'a', 3);
-        // tau0.addTransition(3, 'a', 3);
-
-        TauMapping<Character> tau1 = new TauMapping<>(2);
-        tau1.addTransition(1, 'a', 1);
-        tau1.addTransition(1, 'b', 2);
-        // tau1.addTransition(2, 'a', 3);
-        tau1.addTransition(2, 'b', 2);
-        // tau1.addTransition(3, 'a', 3);
-        // tau1.addTransition(3, 'b', 3);
-
-        Description<Character> description = new Description<>(1, 1);
-        description.addTauMappings(Arrays.asList(tau0, tau1));
-
-        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList(), Arrays.asList('a'), Arrays.asList('b'));
-        
-        BehaviorGraph<Character> bg = new BehaviorGraph<>(alphabet, description);
-        bg.setInitialState(0, 1);
-        bg.addAcceptingState(0, 1);
-        bg.addAcceptingState(0, 2);
-        return bg;
-    }
-
     @Test
     public void toDFAExampleUpTo0() {
-        BehaviorGraph<Character> bg = constructBGExample();
+        BehaviorGraph<Character> bg = ConstructBG.constructBGExample();
         CompactDFA<Character> dfa = bg.toDFA(0);
 
         assertEquals(1, dfa.size());
@@ -78,7 +52,7 @@ public class BehaviorGraphTest {
 
     @Test
     public void toDFAExampleUpTo1() {
-        BehaviorGraph<Character> bg = constructBGExample();
+        BehaviorGraph<Character> bg = ConstructBG.constructBGExample();
         CompactDFA<Character> dfa = bg.toDFA(1);
 
         assertEquals(3, dfa.size());
@@ -97,7 +71,7 @@ public class BehaviorGraphTest {
 
     @Test
     public void toDFAExampleUpTo2() {
-        BehaviorGraph<Character> bg = constructBGExample();
+        BehaviorGraph<Character> bg = ConstructBG.constructBGExample();
         CompactDFA<Character> dfa = bg.toDFA(2);
 
         // FileWriter file = new FileWriter(new File("test.dot"));

@@ -2,9 +2,12 @@ package be.uantwerpen.learningvca.behaviorgraph;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 
+import be.uantwerpen.learningvca.vca.State;
 import be.uantwerpen.learningvca.vca.VCA;
+import net.automatalib.words.VPDAlphabet;
 
 /**
  * The description of a behavior graph.
@@ -13,23 +16,34 @@ import be.uantwerpen.learningvca.vca.VCA;
  *  - The offset m
  *  - The period k
  *  - A list of TauMapping
+ * 
+ * In this implementation, we also store:
+ *  - The width of the behavior graph
+ *  - The initial state
+ *  - The set of accepting states
  * @param <I> Input alphabet type
  * @author Gaëtan Staquet
  */
 public class Description<I extends Comparable<I>> {
     private final int m;
     private final int k;
+    private final int K;
     private final List<TauMapping<I>> tauMappings;
+    private StateBG initialState;
+    private Collection<StateBG> acceptingStates;
     
     /**
      * The constructor
      * @param offset m
      * @param period k
+     * @param width K
      */
-    public Description(int offset, int period) {
+    public Description(int offset, int period, int width) {
         this.m = offset;
         this.k = period;
+        this.K = width;
         this.tauMappings = new ArrayList<>(offset + period);
+        this.acceptingStates = new HashSet<>();
     }
 
     public void addTauMappings(Collection<TauMapping<I>> mappings) {
@@ -59,13 +73,132 @@ public class Description<I extends Comparable<I>> {
     public int getPeriod() {
         return k;
     }
+    
+    /**
+     * Sets the initial state of the behavior graph.
+     * 
+     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
+     * @param mapping The index of the mapping
+     * @param equivalenceClass The number associated with the equivalence class
+     */
+    public void setInitialState(int mapping, int equivalenceClass) {
+        this.initialState = new StateBG(mapping, equivalenceClass);
+    }
+
+    /**
+     * Adds an accepting state of the behavior graph.
+     * 
+     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
+     * @param mapping The index of the mapping
+     * @param equivalenceClass The number associated with the equivalence class
+     */
+    public void addAcceptingState(int mapping, int equivalenceClass) {
+        this.acceptingStates.add(new StateBG(mapping, equivalenceClass));
+    }
+
+    /**
+     * Checks if a state is accepting.
+     * 
+     * The state is designated by the index of the nu mapping and the number associated with the equivalence class
+     * @param mapping The index of the mapping
+     * @param equivalenceClass The number associated with the equivalence class
+     * @return True iff the state is accepting
+     */
+    public boolean isAcceptingState(int mapping, int equivalenceClass) {
+        return isAcceptingState(new StateBG(mapping, equivalenceClass));
+    }
+
+    /**
+     * Checks if a state is accepting.
+     * @param state The state
+     * @return True iff the state is accepting
+     */
+    public boolean isAcceptingState(StateBG state) {
+        return this.acceptingStates.contains(state);
+    }
+
+    /**
+     * @return The initial state
+     */
+    public StateBG getInitialState() {
+        return initialState;
+    }
 
     /**
      * Constructs a m-VCA accepting the same language as the behavior graph described.
      * @return A m-VCA
      */
-    public VCA<I> toVCA() {
-        // TODO
-        return null;
+    public VCA<I> toVCA(VPDAlphabet<I> alphabet) {
+        // See definition 2.1
+        VCA<I> vca = new VCA<>(alphabet, m);
+
+        ArrayList<ArrayList<State>> states = new ArrayList<>(K);
+
+        // We create Q
+        for (int i = 1 ; i <= K ; i++) {
+            ArrayList<State> s = new ArrayList<>(k);
+            for (int j = 0 ; j <= k - 1 ; j++) {
+                s.add(vca.addState());
+            }
+            states.add(s);
+        }
+
+        // q_0
+        vca.setInitialState(states.get(initialState.getEquivalenceClass() - 1).get(k - 1));
+
+        // We set F
+        for (StateBG stateBG : acceptingStates) {
+            for (int j = 0 ; j <= k - 1 ; j++) {
+                states.get(stateBG.getEquivalenceClass() - 1).get(j).setIsAccepting(true);
+            }
+        }
+
+        // delta
+        for (int i = 1 ; i <= K ; i++) {
+            for (int r = 0 ; r <= k - 1 ; r++) {
+                for (I a : alphabet) {
+                    State start = states.get(i - 1).get(r);
+                    // Every transition function except delta_m
+                    for (int j = 0 ; j <= m - 1 ; j++) {
+                        int tau = tauMappings.get(j).getTransition(i, a);
+                        if (tau == -1) {
+                            continue;
+                        }
+                        if (alphabet.isCallSymbol(a)) {
+                            if (j == m - 1) {
+                                vca.setCallSuccessor(start, j, a, states.get(tau - 1).get(0));
+                            }
+                            else {
+                                vca.setCallSuccessor(start, j, a, states.get(tau - 1).get(k - 1));
+                            }
+                        }
+                        else if (alphabet.isReturnSymbol(a)) {
+                            vca.setReturnSuccessor(start, j, a, states.get(tau - 1).get(k - 1));
+                        }
+                        else {
+                            vca.setInternalSuccessor(start, j, a, states.get(tau - 1).get(k - 1));
+                        }
+                    }
+
+                    // delta_m
+                    int tau = tauMappings.get(m + r).getTransition(i, a);
+                    if (tau == -1) {
+                        continue;
+                    }
+                    if (alphabet.isCallSymbol(a)) {
+                        vca.setCallSuccessor(start, m, a, states.get(tau - 1).get(Math.floorMod(r + 1, k)));
+                    }
+                    else if (alphabet.isReturnSymbol(a)) {
+                        // Math.floorMod returns the modulus (so, it is always positive)
+                        vca.setReturnSuccessor(start, m, a, states.get(tau - 1).get(Math.floorMod(r - 1, k)));
+                    }
+                    else {
+                        vca.setInternalSuccessor(start, m, a, states.get(tau - 1).get(r));
+                    }
+                }
+            }
+        }
+
+        return vca;
     }
 }

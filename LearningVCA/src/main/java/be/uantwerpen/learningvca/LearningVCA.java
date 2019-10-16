@@ -94,13 +94,13 @@ public class LearningVCA {
         // tau1.addTransition(3, 'a', 3);
         // tau1.addTransition(3, 'b', 3);
 
-        Description<Character> description = new Description<>(1, 1);
+        Description<Character> description = new Description<>(1, 1, 2);
         description.addTauMappings(Arrays.asList(tau0, tau1));
+        description.setInitialState(0, 1);
+        description.addAcceptingState(0, 1);
+        description.addAcceptingState(0, 2);
         
         BehaviorGraph<Character> bg = new BehaviorGraph<>(alphabet, description);
-        bg.setInitialState(0, 1);
-        bg.addAcceptingState(0, 1);
-        bg.addAcceptingState(0, 2);
         return bg;
     }
 }
