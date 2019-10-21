@@ -189,6 +189,8 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
                     state.getCounterValue().toInt());
             successorValue = state.getCounterValue();
             break;
+        default:
+            break;
         }
         return new Configuration<State>(successor, successorValue);
     }

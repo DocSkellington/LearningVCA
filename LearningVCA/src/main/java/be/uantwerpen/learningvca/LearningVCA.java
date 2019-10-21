@@ -11,6 +11,7 @@ import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
 import be.uantwerpen.learningvca.vca.State;
 import be.uantwerpen.learningvca.vca.VCA;
+import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.oracle.membership.SimulatorOracle;
 import net.automatalib.words.VPDAlphabet;
@@ -26,20 +27,19 @@ public class LearningVCA {
 
     }
 
-    public static void main( String[] args )
-    {
+    public static void main( String[] args ) {
         VCA<Character> sul = getSUL();
         VPDAlphabet<Character> alphabet = sul.getAlphabet();
         BehaviorGraph<Character> behaviorGraph = getBG(alphabet);
 
-        SimulatorOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(sul);
+        MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(sul);
         PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(behaviorGraph);
         EquivalenceVCAOracle<Character>     equivalenceVCAOracle = new EquivalenceVCAOracle<>(sul);
 
         LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
-        int t = 0;
 
         DefaultQuery<Character, Boolean> counterexample = null;
+        VCA<Character> answer = null;
 
         do {
             if (counterexample == null) {
@@ -50,21 +50,28 @@ public class LearningVCA {
             }
 
             VCA<Character> hypothesis;
+            // We test every possible description of BG_O
             while ((hypothesis = learner.getHypothesisModel()) != null) {
-                DefaultQuery<Character, Boolean> word = equivalenceVCAOracle.findCounterExample(learner.getHypothesisModel(), alphabet);
+                DefaultQuery<Character, Boolean> word = equivalenceVCAOracle.findCounterExample(hypothesis, alphabet);
 
-                if (getHeight(word.getInput(), alphabet) > t) {
+                if (word == null) {
+                    // We have found a correct VCA
+                    answer = hypothesis;
+                    break;
+                }
+
+                if (getHeight(word.getInput(), alphabet) > learner.getObservationTableLevelLimit()) {
                     counterexample = word;
                 }
             }
 
-            if (counterexample == null) {
-                // Use BG_O as a t-VCA
+            if (counterexample == null && answer == null) {
+                // We didn't find a counter example nor an appropriate VCA
+                counterexample = equivalenceVCAOracle.findCounterExample(learner.getObservationTableVCA(), alphabet);
             }
         } while (counterexample != null);
 
         // TODO write the final VCA in DOT format
-        VCA<Character> answer = learner.getLastHypothesis();
     }
 
     /**
