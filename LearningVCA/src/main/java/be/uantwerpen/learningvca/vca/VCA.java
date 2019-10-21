@@ -8,6 +8,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import net.automatalib.automata.concepts.SuffixOutput;
+import net.automatalib.automata.vpda.DefaultOneSEVPA;
+import net.automatalib.automata.vpda.OneSEVPA;
 import net.automatalib.ts.acceptors.DeterministicAcceptorTS;
 import net.automatalib.words.VPDAlphabet;
 
@@ -143,6 +145,16 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
      */
     public void setReturnSuccessor(State start, int counterValue, I input, State successor) {
         start.setReturnSuccessor(alphabet.getReturnSymbolIndex(input), counterValue, successor);
+    }
+
+    /**
+     * Constructs a 1-single entry visibly pushdown automaton accepting the same language as this VCA
+     * @return The VPDA
+     */
+    public DefaultOneSEVPA<I> toVPDA() {
+        DefaultOneSEVPA<I> vpda = new DefaultOneSEVPA<>(alphabet);
+        // TODO
+        return null;
     }
 
     // Since DeterministicAcceptorTS and SuffixOutput both defines computeOutput, we need to explicitly define our function

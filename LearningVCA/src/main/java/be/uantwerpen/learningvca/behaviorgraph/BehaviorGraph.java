@@ -1,9 +1,5 @@
 package be.uantwerpen.learningvca.behaviorgraph;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Objects;
-
 import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.words.VPDAlphabet;
 

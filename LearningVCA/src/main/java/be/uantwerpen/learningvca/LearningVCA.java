@@ -14,6 +14,7 @@ import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.oracle.membership.SimulatorOracle;
 import net.automatalib.words.VPDAlphabet;
+import net.automatalib.words.Word;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
 /**
@@ -35,7 +36,8 @@ public class LearningVCA {
         PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(behaviorGraph);
         EquivalenceVCAOracle<Character>     equivalenceVCAOracle = new EquivalenceVCAOracle<>(sul);
 
-        LearnerVCA<Character> learner = new LearnerVCA<>(membershipOracle, partialEquivalenceOracle);
+        LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
+        int t = 0;
 
         DefaultQuery<Character, Boolean> counterexample = null;
 
@@ -47,10 +49,22 @@ public class LearningVCA {
                 learner.refineHypothesis(counterexample);
             }
 
-            counterexample = equivalenceVCAOracle.findCounterExample(learner.getHypothesisModel(), alphabet);
+            VCA<Character> hypothesis;
+            while ((hypothesis = learner.getHypothesisModel()) != null) {
+                DefaultQuery<Character, Boolean> word = equivalenceVCAOracle.findCounterExample(learner.getHypothesisModel(), alphabet);
+
+                if (getHeight(word.getInput(), alphabet) > t) {
+                    counterexample = word;
+                }
+            }
+
+            if (counterexample == null) {
+                // Use BG_O as a t-VCA
+            }
         } while (counterexample != null);
 
         // TODO write the final VCA in DOT format
+        VCA<Character> answer = learner.getLastHypothesis();
     }
 
     /**
@@ -102,5 +116,20 @@ public class LearningVCA {
         
         BehaviorGraph<Character> bg = new BehaviorGraph<>(alphabet, description);
         return bg;
+    }
+
+    private static int getHeight(Word<Character> word, VPDAlphabet<Character> alphabet) {
+        int height = 0;
+        int counterValue = 0;
+        for (Character c : word) {
+            if (alphabet.isCallSymbol(c)) {
+                counterValue++;
+                height = Math.max(height, counterValue);
+            }
+            else if (alphabet.isReturnSymbol(c)) {
+                counterValue--;
+            }
+        }
+        return height;
     }
 }
