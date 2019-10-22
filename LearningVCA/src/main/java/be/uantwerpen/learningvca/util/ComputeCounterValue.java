@@ -13,6 +13,41 @@ public class ComputeCounterValue {
     }
 
     /**
+     * Computes the height of a word.
+     * 
+     * The height of a word is the maximal counter value among the prefixes of the word
+     * @param <I> The input alphabet type
+     * @param word The word
+     * @param alphabet The alphabet
+     * @return The height of the word
+     */
+    public static <I> int computeHeight(Word<I> word, VPDAlphabet<I> alphabet) {
+        int counterValue = 0;
+        int height = 0;
+        for (I symbol : word) {
+            switch(alphabet.getSymbolType(symbol)) {
+                case CALL:
+                    counterValue++;
+                    height = Math.max(counterValue, height);
+                    break;
+                case RETURN:
+                    if (counterValue == 0) {
+                        return -1;
+                    }
+                    else {
+                        counterValue--;
+                    }
+                    break;
+                case INTERNAL:
+                    break;
+                default:
+                    break;
+            }
+        }
+        return height;
+    }
+
+    /**
      * Computes the counter value of a word.
      * 
      * If the word can not be processed by a VCA (that is, if the counter value reaches a value below zero), then -1 is returned.
@@ -82,6 +117,15 @@ public class ComputeCounterValue {
         return counterValue;
     }
 
+    /**
+     * Gets the sign of a symbol.
+     * 
+     * That is, the sign of a call symbol is +1, the sign of a return symbol is -1 and the sign of an internal symbol is 0.
+     * @param <I> The input alphabet type
+     * @param symbol The symbol
+     * @param alphabet The alphabet
+     * @return The sign of the symbol
+     */
     public static <I> int signOf(I symbol, VPDAlphabet<I> alphabet) {
         switch(alphabet.getSymbolType(symbol)) {
             case CALL:

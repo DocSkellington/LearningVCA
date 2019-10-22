@@ -87,4 +87,11 @@ public class StratifiedObservationRow<I> implements Row<I> {
         }
         this.successors = new ArrayStorage<>(alphabetSize);
     }
+
+    /**
+     * @return True iff this row has contents
+     */
+    public boolean hasContents() {
+        return (rowContentId != -1);
+    }
 }

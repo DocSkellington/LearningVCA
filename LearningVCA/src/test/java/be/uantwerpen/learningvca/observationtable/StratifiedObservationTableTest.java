@@ -31,6 +31,7 @@ public class StratifiedObservationTableTest {
 
     @Before
     public void init() {
+        // We have one useless internal symbol (as it is not used by the VCA)
         alphabet = new DefaultVPDAlphabet<>(Arrays.asList('c', 'd'), Arrays.asList('a'), Arrays.asList('b'));
         table = new StratifiedObservationTable<>(alphabet);
 
@@ -98,5 +99,61 @@ public class StratifiedObservationTableTest {
         List<Word<Character>> prefixes = Arrays.asList(Word.fromSymbols('a', 'b'));
         List<Word<Character>> suffixes = Arrays.asList(Word.epsilon());
         table.initialize(prefixes, suffixes, oracle);
+    }
+
+    @Test
+    public void testAddOneShortPrefixAlreadyInTableAsShortPrefix() {
+        table.initialize(Arrays.asList(Word.epsilon()), Arrays.asList(Word.epsilon()), oracle);
+
+        List<List<Row<Character>>> unclosed = table.addShortPrefixes(Arrays.asList(Word.epsilon()), oracle);
+        assertEquals(0, unclosed.size());
+
+        assertEquals(0, table.getLevelLimit());
+        assertEquals(1, table.numberOfShortPrefixRows());
+        assertEquals(2, table.numberOfLongPrefixRows());
+        assertEquals(3, table.numberOfRows());
+        assertEquals(1, table.numberOfSuffixes());
+        assertEquals(1, table.numberOfDistinctRows());
+
+        assertTrue(table.isClosed());
+        assertTrue(table.isConsistent());
+    }
+
+    @Test
+    public void testAddOneNewShortPrefix() {
+        table.initialize(Arrays.asList(Word.epsilon()), Arrays.asList(Word.epsilon()), oracle);
+
+        List<List<Row<Character>>> unclosed = table.addShortPrefixes(Arrays.asList(Word.fromLetter('a')), oracle);
+        assertEquals(0, unclosed.size());
+
+        assertEquals(1, table.getLevelLimit());
+        assertEquals(2, table.numberOfShortPrefixRows());
+        assertEquals(5, table.numberOfLongPrefixRows());
+        assertEquals(7, table.numberOfRows());
+        // 2 distinct rows because the level 1 (for 'a') does not have any separators
+        assertEquals(2, table.numberOfDistinctRows());
+
+        StratifiedObservationRow<Character> rowA = table.getRow(Word.fromLetter('a'));
+        assertNotNull(rowA);
+
+        // The table is not closed since the new level limit is 1 and espilon a = a is not a representative
+        assertFalse(table.isClosed());
+        assertTrue(table.isConsistent());
+
+        assertNotNull(table.findUnclosedRow());
+    }
+
+    @Test
+    public void testLongPrefixToShortPrefix() {
+        table.initialize(Arrays.asList(Word.epsilon()), Arrays.asList(Word.epsilon()), oracle);
+
+        StratifiedObservationRow<Character> rowC = table.getRow(Word.fromLetter('c'));
+
+        // toShortPrefixes directly close the rows
+        List<List<Row<Character>>> unclosed = table.toShortPrefixes(Arrays.asList(rowC), oracle);
+        assertEquals(0, unclosed.size());
+
+        assertTrue(table.isClosed());
+        assertTrue(table.isConsistent());
     }
 }

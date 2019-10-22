@@ -2,7 +2,9 @@ package be.uantwerpen.learningvca.observationtable;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -13,6 +15,7 @@ import be.uantwerpen.learningvca.util.ComputeCounterValue;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
+import de.learnlib.datastructure.observationtable.Inconsistency;
 import de.learnlib.datastructure.observationtable.MutableObservationTable;
 import de.learnlib.datastructure.observationtable.Row;
 import net.automatalib.words.Alphabet;
@@ -33,6 +36,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
     private final List<StratifiedObservationRow<I>> internalPrefixRows;
     private final List<StratifiedObservationRow<I>> callPrefixRows;
     private final List<StratifiedObservationRow<I>> returnPrefixRows;
+    private final List<StratifiedObservationRow<I>> allLongPrefixRows;
     private final List<StratifiedObservationRow<I>> allPrefixRows;
 
     private final Map<Word<I>, StratifiedObservationRow<I>> rowMap;
@@ -54,6 +58,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         this.internalPrefixRows = new LinkedList<>();
         this.callPrefixRows = new LinkedList<>();
         this.returnPrefixRows = new LinkedList<>();
+        this.allLongPrefixRows = new LinkedList<>();
         this.allPrefixRows = new LinkedList<>();
 
         this.rowMap = new HashMap<>();
@@ -64,7 +69,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
 
         this.rowContentsIdsMap = new HashMap<>();
 
-        this.maxLevel = 0;
+        this.maxLevel = -1;
 
         this.initialConsistencyCheckRequired = false;
     }
@@ -159,35 +164,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
 
         // We add the missing long prefixes, if needed
         // Since t = 0, we know that every short prefix has a counter value of 0
-        for (StratifiedObservationRow<I> row : shortPrefixRows.get(0)) {
-            Word<I> shortPrefix = row.getLabel();
-            for (int i = 0 ; i < alphabet.size() ; i++) {
-                I symbol = alphabet.getSymbol(i);
-                Word<I> longPrefix = shortPrefix.append(symbol);
-                StratifiedObservationRow<I> successorRow = getRow(longPrefix);
-                if (successorRow == null) {
-                    // We create the long prefix row
-                    switch (alphabet.getSymbolType(symbol)) {
-                        case CALL:
-                            successorRow = createCallPrefixRow(longPrefix);
-                            break;
-                        case RETURN:
-                            successorRow = createReturnPrefixRow(longPrefix);
-                            break;
-                        case INTERNAL:
-                            successorRow = createInternalPrefixRow(longPrefix);
-                            break;
-                    }
-
-                    if (successorRow != null) {
-                        // We do not create queries for words that can not be in T
-                        createQueries(queries, longPrefix, suffixes.get(0));
-                    }
-                }
-
-                row.setSuccessor(i, successorRow);
-            }
-        }
+        shortPrefixRows.get(0).stream().forEach(row -> this.createLongPrefixesRows(row, queries));
 
         oracle.processQueries(queries);
 
@@ -272,6 +249,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         Integer contentID = rowContentsIdsMap.get(rowContents);
         // If the row is not yet registered, we register it
         if (contentID == null) {
+            added = true;
             contentID = numberOfDistinctRows();
             rowContentsIdsMap.put(rowContents, contentID);
             allRowContents.add(rowContents);
@@ -301,6 +279,51 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
     }
 
     /**
+     * Creates every possible long prefix based on the short prefix and the queries needed to fill this rows.
+     * @param shortPrefixRow The row of the short prefix to use
+     * @param queries The list of queries to fill
+     */
+    private void createLongPrefixesRows(StratifiedObservationRow<I> shortPrefixRow, List<DefaultQuery<I, D>> queries) {
+        Word<I> shortPrefix = shortPrefixRow.getLabel();
+        for (int i = 0 ; i < alphabet.size() ; i++) {
+            I symbol = alphabet.getSymbol(i);
+            if ((i == 0 && alphabet.isReturnSymbol(symbol)) || (i == maxLevel && alphabet.isCallSymbol(symbol))) {
+                continue;
+            }
+            int counterValue = ComputeCounterValue.computeCounterValue(shortPrefix, alphabet);
+            Word<I> longPrefix = shortPrefix.append(symbol);
+
+            StratifiedObservationRow<I> successorRow = getRow(longPrefix);
+
+            if (successorRow == null) {
+                // We create the long prefix row
+                switch (alphabet.getSymbolType(symbol)) {
+                    case CALL:
+                        successorRow = createCallPrefixRow(longPrefix);
+                        if (successorRow != null) {
+                            createQueries(queries, longPrefix, suffixes.get(counterValue + 1));
+                        }
+                        break;
+                    case RETURN:
+                        successorRow = createReturnPrefixRow(longPrefix);
+                        if (successorRow != null) {
+                            createQueries(queries, longPrefix, suffixes.get(counterValue - 1));
+                        }
+                        break;
+                    case INTERNAL:
+                        successorRow = createInternalPrefixRow(longPrefix);
+                        if (successorRow != null) {
+                            createQueries(queries, longPrefix, suffixes.get(counterValue));
+                        }
+                        break;
+                }
+            }
+
+            shortPrefixRow.setSuccessor(i, successorRow);
+        }
+    }
+
+    /**
      * Creates a row for a long prefix built with an internal symbol
      * @param longPrefix The long prefix
      * @return A row for the long prefix
@@ -314,6 +337,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         rowMap.put(longPrefix, row);
         internalPrefixRows.add(row);
         allPrefixRows.add(row);
+        allLongPrefixRows.add(row);
         return row;
     }
 
@@ -331,6 +355,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         rowMap.put(longPrefix, row);
         callPrefixRows.add(row);
         allPrefixRows.add(row);
+        allLongPrefixRows.add(row);
         return row;
     }
 
@@ -348,6 +373,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         rowMap.put(longPrefix, row);
         returnPrefixRows.add(row);
         allPrefixRows.add(row);
+        allLongPrefixRows.add(row);
         return row;
     }
 
@@ -367,16 +393,192 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         return null;
     }
 
-    @Override
-    public List<List<Row<I>>> addShortPrefixes(List<? extends Word<I>> shortPrefixes, MembershipOracle<I, D> oracle) {
-        // TODO Auto-generated method stub
+    /**
+     * Adds a suffix in the given level.
+     * @param suffix The suffix
+     * @param suffixLevel The level of the suffix
+     * @param oracle The membership oracle
+     * @return A list of equivalence classes of unclosed rows
+     */
+    public List<List<Row<I>>> addSuffix(Word<I> suffix, int suffixLevel, MembershipOracle<I, D> oracle) {
+        return addSuffixes(Arrays.asList(suffix), Arrays.asList(suffixLevel), oracle);
+    }
+
+    /**
+     * Adds suffixes to the list of distinguishing suffixes on the given levels.
+     * 
+     * This does not increase the maximum level of the table.
+     * @param newSuffixes The suffixes
+     * @param newSuffixesLevels The level in which each suffix must be added
+     * @param oracle The membership oracle
+     * @return A list of equivalence classes of unclosed rows
+     */
+    public List<List<Row<I>>> addSuffixes(List<? extends Word<I>> newSuffixes, List<Integer> newSuffixesLevels, MembershipOracle<I, D> oracle) {
+        if (newSuffixes.size() != newSuffixesLevels.size()) {
+            throw new InvalidParameterException("StratifiedObservationTable: addSuffixes: there must be the same number of new suffixes and levels");
+        }
+
+        List<List<Word<I>>> newSuffixesList = new ArrayList<>(maxLevel + 1);
+        for (int level = 0 ; level <= maxLevel ; level++) {
+            List<Word<I>> l = new ArrayList<>(newSuffixes.size());
+            for (int j = 0 ; j < newSuffixes.size() ; j++) {
+                // We keep only the really new suffixes
+                if (newSuffixesLevels.get(j) == level && !suffixes.get(level).contains(newSuffixes.get(j))) {
+                    l.add(newSuffixes.get(j));
+                }
+            }
+            newSuffixesList.add(l);
+        }
+
+        List<DefaultQuery<I, D>> queries = new ArrayList<>();
+
+        for (int level = 0 ; level <= maxLevel ; level++) {
+            for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
+                createQueries(queries, shortPrefixRow.getLabel(), newSuffixesList.get(level));
+            }
+        }
+
+        for (StratifiedObservationRow<I> longPrefixRow : allLongPrefixRows) {
+            Word<I> longPrefix = longPrefixRow.getLabel();
+            createQueries(queries, longPrefixRow.getLabel(), newSuffixesList.get(ComputeCounterValue.computeCounterValue(longPrefix, alphabet)));
+        }
+
+        oracle.processQueries(queries);
+        // TODO
         return null;
     }
 
     @Override
-    public List<List<Row<I>>> toShortPrefixes(List<Row<I>> lpRows, MembershipOracle<I, D> oracle) {
-        // TODO Auto-generated method stub
-        return null;
+    public List<List<Row<I>>> addShortPrefixes(List<? extends Word<I>> shortPrefixes, MembershipOracle<I, D> oracle) {
+        List<Row<I>> toShortPrefixRows = new ArrayList<>(shortPrefixes.size());
+
+        for (Word<I> shortPrefix : shortPrefixes) {
+            int counterValue = ComputeCounterValue.computeCounterValue(shortPrefix, alphabet);
+            increaseLevelLimit(counterValue);
+            StratifiedObservationRow<I> shortPrefixRow = rowMap.get(shortPrefix);
+            if (shortPrefixRow == null) {
+                // If the short prefix is not yet in the table, we create a new row and close it
+                List<DefaultQuery<I, D>> queries = new ArrayList<>();
+                shortPrefixRow = createShortPrefixRow(shortPrefix);
+                createQueries(queries, shortPrefix, suffixes.get(counterValue));
+                createLongPrefixesRows(shortPrefixRow, queries);
+
+                oracle.processQueries(queries);
+
+                Iterator<DefaultQuery<I, D>> queryIt = queries.iterator();
+                // Short prefix
+                List<D> rowContents = new ArrayList<>(suffixes.get(counterValue).size());
+                fetchQueriesResults(queryIt, rowContents, suffixes.get(counterValue).size());
+                processContents(shortPrefixRow, rowContents);
+
+                // Long prefixes
+                for (int i = 0 ; i < alphabet.size() ; i++) {
+                    StratifiedObservationRow<I> successorRow = shortPrefixRow.getSuccessor(i);
+                    if (successorRow == null || successorRow.isShortPrefixRow()) {
+                        // We ignore this successor if it is invalid or a short prefix
+                        continue;
+                    }
+                    int numSuffixes = suffixes.get(counterValue + ComputeCounterValue.signOf(alphabet.getSymbol(i), alphabet)).size();
+                    rowContents = new ArrayList<>(numSuffixes);
+                    fetchQueriesResults(queryIt, rowContents, numSuffixes);
+                    processContents(successorRow, rowContents);
+                }
+            }
+            else if (!shortPrefixRows.get(counterValue).contains(shortPrefixRow)) {
+                toShortPrefixRows.add(shortPrefixRow);
+            }
+        }
+
+        // TODO am I supposed to find every unclosed row?
+        return toShortPrefixes(toShortPrefixRows, oracle);
+    }
+
+    /**
+     * Transforms a long prefix row into a short prefix row.
+     * 
+     * It does not create the new long prefix rows.
+     * 
+     * If the row is already a short prefix, nothing happens
+     * @param row The row
+     */
+    private void makeShort(StratifiedObservationRow<I> row) {
+        if (row.isShortPrefixRow()) {
+            return;
+        }
+
+        Word<I> longPrefix = row.getLabel();
+        // We remove row from the appropriate long prefix storage
+        switch(alphabet.getSymbolType(longPrefix.lastSymbol())) {
+            case CALL:
+                callPrefixRows.remove(row);
+                break;
+            case RETURN:
+                returnPrefixRows.remove(row);
+                break;
+            case INTERNAL:
+                internalPrefixRows.remove(row);
+                break;
+        }
+        allLongPrefixRows.remove(row);
+
+        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet);
+        shortPrefixRows.get(counterValue).add(row);
+        row.makeShort(alphabet.size());
+    }
+
+    @Override
+    public List<List<Row<I>>> toShortPrefixes(List<Row<I>> longPrefixRows, MembershipOracle<I, D> oracle) {
+        List<StratifiedObservationRow<I>> freshShortPrefixRows = new ArrayList<>(); // The short prefix rows without contents
+
+        // We keep only the rows with missing contents
+        for (Row<I> r : longPrefixRows) {
+            final StratifiedObservationRow<I> row = getRow(r.getRowId());
+            if (row.isShortPrefixRow()) {
+                if (row.hasContents()) {
+                    continue;
+                }
+                freshShortPrefixRows.add(row);
+            }
+            else {
+                makeShort(row);
+                freshShortPrefixRows.add(row);
+            }
+        }
+
+        // We fill these rows
+        for (StratifiedObservationRow<I> shortPrefixRow : freshShortPrefixRows) {
+            Word<I> shortPrefix = shortPrefixRow.getLabel();
+            int counterValue = ComputeCounterValue.computeCounterValue(shortPrefix, alphabet);
+
+            List<DefaultQuery<I, D>> queries = new ArrayList<>();
+            
+            // We create the long prefixe rows and the queries
+            createQueries(queries, shortPrefix, suffixes.get(counterValue));
+            createLongPrefixesRows(shortPrefixRow, queries);
+
+            oracle.processQueries(queries);
+
+            Iterator<DefaultQuery<I, D>> queryIt = queries.iterator();
+            // Short prefix
+            List<D> rowContents = new ArrayList<>(suffixes.get(counterValue).size());
+            fetchQueriesResults(queryIt, rowContents, suffixes.get(counterValue).size());
+            processContents(shortPrefixRow, rowContents);
+
+            // Long prefixes
+            for (int i = 0 ; i < alphabet.size() ; i++) {
+                StratifiedObservationRow<I> successorRow = shortPrefixRow.getSuccessor(i);
+                if (successorRow == null || successorRow.isShortPrefixRow()) {
+                    // We ignore this successor if it is invalid or a short prefix
+                    continue;
+                }
+                int numSuffixes = suffixes.get(counterValue + ComputeCounterValue.signOf(alphabet.getSymbol(i), alphabet)).size();
+                rowContents = new ArrayList<>(numSuffixes);
+                fetchQueriesResults(queryIt, rowContents, numSuffixes);
+                processContents(successorRow, rowContents);
+            }
+        }
+
+        return Collections.emptyList();
     }
 
     @Override
@@ -384,79 +586,23 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         throw new UnsupportedOperationException("StratifiedObservationTable: impossible to add an alphabet symbol");
     }
 
-    @Override
-    public boolean isClosed() {
-        for (int i = 0 ; i <= maxLevel ; i++) {
-            for (I symbol : alphabet) {
-                if ((i == 0 && alphabet.isReturnSymbol(symbol)) || (i == maxLevel && alphabet.isCallSymbol(symbol))) {
-                    // We skip
-                    continue;
-                }
-
-                for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(i)) {
-                    StratifiedObservationRow<I> longPrefixRow = shortPrefixRow.getSuccessor(alphabet.getSymbolIndex(symbol));
-                    
-                    if (longPrefixRow == null) {
-                        return false;
-                    }
-                    
-                    // Same row content id => same information in the row => same equivalence class
-                    boolean hasClass = shortPrefixRows.get(i + ComputeCounterValue.signOf(symbol, alphabet)).
-                        stream().
-                        anyMatch(row -> row.getRowContentId() == longPrefixRow.getRowContentId());
-
-                    if (!hasClass) {
-                        return false;
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
-    @Override
-    public boolean isConsistent() {
-        for (int i = 0; i <= maxLevel ; i++) {
-            for (I symbol : alphabet) {
-                if ((i == 0 && alphabet.isReturnSymbol(symbol)) || (i == maxLevel && alphabet.isCallSymbol(symbol))) {
-                    // We skip
-                    continue;
-                }
-
-                for (StratifiedObservationRow<I> uRow : shortPrefixRows.get(i)) {
-                    for (StratifiedObservationRow<I> vRow : shortPrefixRows.get(i)) {
-                        if (uRow.getRowContentId() == vRow.getRowContentId()) {
-                            StratifiedObservationRow<I> uaRow = rowMap.get(uRow.getLabel().append(symbol));
-                            StratifiedObservationRow<I> vaRow = rowMap.get(vRow.getLabel().append(symbol));
-
-                            if (uaRow == null || vaRow == null) {
-                                return false;
-                            }
-                            
-                            if (uaRow.getRowContentId() != vaRow.getRowContentId()) {
-                                return false;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return true;
-    }
-
     /**
      * Increases the max level of this table.
      * 
-     * That is, words are allowed to have a counter value up to the new limit
+     * That is, words are allowed to have a counter value up to the new limit.
+     * 
+     * If the new limit is lower than the current limit, nothing happens
      * @param newLimit The new limit
      */
     private void increaseLevelLimit(int newLimit) {
-        this.maxLevel = newLimit;
-        while (shortPrefixRows.size() <= newLimit) {
-            shortPrefixRows.add(new LinkedList<>());
-        }
-        while (suffixes.size() <= newLimit) {
-            suffixes.add(new LinkedList<>());
+        if (newLimit > maxLevel) {
+            maxLevel = newLimit;
+            while (shortPrefixRows.size() <= newLimit) {
+                shortPrefixRows.add(new LinkedList<>());
+            }
+            while (suffixes.size() <= newLimit) {
+                suffixes.add(new LinkedList<>());
+            }
         }
     }
 
@@ -473,6 +619,75 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      */
     public VCA<I> toVCA() {
         // TODO use BG_O to construct a t-VCA
+        return null;
+    }
+
+    @Override
+    public Row<I> findUnclosedRow() {
+        for (int i = 0 ; i <= maxLevel ; i++) {
+            for (I symbol : alphabet) {
+                if ((i == 0 && alphabet.isReturnSymbol(symbol)) || (i == maxLevel && alphabet.isCallSymbol(symbol))) {
+                    // We skip
+                    continue;
+                }
+
+                for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(i)) {
+                    StratifiedObservationRow<I> longPrefixRow = shortPrefixRow.getSuccessor(alphabet.getSymbolIndex(symbol));
+                    
+                    if (longPrefixRow == null) {
+                        return shortPrefixRow;
+                    }
+                    
+                    // Same row content id => same information in the row => same equivalence class
+                    boolean hasClass = shortPrefixRows.get(i + ComputeCounterValue.signOf(symbol, alphabet)).
+                        stream().
+                        anyMatch(row -> row.getRowContentId() == longPrefixRow.getRowContentId());
+
+                    if (!hasClass) {
+                        return shortPrefixRow;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public Inconsistency<I> findInconsistency() {
+        for (int i = 0; i <= maxLevel ; i++) {
+            for (I symbol : alphabet) {
+                if ((i == 0 && alphabet.isReturnSymbol(symbol)) || (i == maxLevel && alphabet.isCallSymbol(symbol))) {
+                    // We skip
+                    continue;
+                }
+
+                for (StratifiedObservationRow<I> uRow : shortPrefixRows.get(i)) {
+                    for (StratifiedObservationRow<I> vRow : shortPrefixRows.get(i)) {
+                        if (uRow.getRowContentId() == vRow.getRowContentId()) {
+                            StratifiedObservationRow<I> uaRow = uRow.getSuccessor(alphabet.getSymbolIndex(symbol));
+                            StratifiedObservationRow<I> vaRow = vRow.getSuccessor(alphabet.getSymbolIndex(symbol));
+
+                            if (uaRow == null && vaRow == null) {
+                                // Actually, the table is not closed (since ua and va are not known)
+                                // So, we just skip this case and say that the table is consistent
+                                // It's fine as the user is supposed to make the table close and consistent (and we can't really say that the classes are different)
+                                continue;
+                            }
+
+                            if (uaRow == null || vaRow == null) {
+                                System.out.println("Null");
+                                return new Inconsistency<>(uRow, vRow, symbol);
+                            }
+                            
+                            if (uaRow.getRowContentId() != vaRow.getRowContentId()) {
+                                System.out.println("Different");
+                                return new Inconsistency<>(uRow, vRow, symbol);
+                            }
+                        }
+                    }
+                }
+            }
+        }
         return null;
     }
 }

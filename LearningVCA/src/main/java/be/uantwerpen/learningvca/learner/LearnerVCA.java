@@ -9,6 +9,7 @@ import be.uantwerpen.learningvca.behaviorgraph.Description;
 import be.uantwerpen.learningvca.behaviorgraph.LimitedBehaviorGraph;
 import be.uantwerpen.learningvca.observationtable.StratifiedObservationTable;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
+import be.uantwerpen.learningvca.util.ComputeCounterValue;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
@@ -52,13 +53,16 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
         Word<I> counterexample = ceQuery.getInput();
         List<Word<I>> prefixes = new ArrayList<>(counterexample.size());
         List<Word<I>> suffixes = new ArrayList<>(counterexample.size());
+        List<Integer> suffixesLevels = new ArrayList<>(counterexample.size());
         // We skip epsilon since it is already in the representatives and the separators
         for (int i = 1 ; i < counterexample.size() ; i++) {
             prefixes.add(counterexample.subWord(0, i + 1)); // upper bound is exclusive
-            suffixes.add(counterexample.subWord(i + 1));
+            Word<I> suffix = counterexample.subWord(i + 1);
+            suffixes.add(suffix);
+            suffixesLevels.add(ComputeCounterValue.computeCounterValue(suffix, alphabet));
         }
         stratifiedObservationTable.addShortPrefixes(prefixes, membershipOracle);
-        stratifiedObservationTable.addSuffixes(suffixes, membershipOracle);
+        stratifiedObservationTable.addSuffixes(suffixes, suffixesLevels, membershipOracle);
 
         // Learning the behavior graph up to t
         LimitedBehaviorGraph<I> behaviorGraphUpToT = learnBehaviorGraphUpTo(stratifiedObservationTable.getLevelLimit());
