@@ -28,6 +28,7 @@ public class TauMapping<I extends Comparable<I>> {
             this.input = input;
         }
 
+        @SuppressWarnings("unchecked")
         @Override
         public boolean equals(Object obj) {
             if (obj == this) {

@@ -7,9 +7,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import com.google.common.collect.Iterables;
+
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.automata.vpda.DefaultOneSEVPA;
-import net.automatalib.automata.vpda.OneSEVPA;
 import net.automatalib.ts.acceptors.DeterministicAcceptorTS;
 import net.automatalib.words.VPDAlphabet;
 
@@ -222,7 +223,7 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
 
     @Override
     public Boolean computeSuffixOutput(Iterable<? extends I> prefix, Iterable<? extends I> suffix) {
-        // TODO Auto-generated method stub
-        return null;
+        Configuration<State> state =  getState(Iterables.concat(prefix, suffix));
+        return state != null && isAccepting(state);
     }
 }

@@ -1,5 +1,6 @@
 package be.uantwerpen.learningvca.observationtable;
 
+import java.security.InvalidParameterException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -150,7 +151,9 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
 
         // We add the short prefixes
         for (Word<I> shortPrefix : initialShortPrefixes) {
-            createShortPrefixRow(shortPrefix);
+            if (createShortPrefixRow(shortPrefix) == null) {
+                throw new InvalidParameterException("StratifiedObservationTable: invalid prefix: the prefix " + shortPrefix + " has a height exceeding " + maxLevel);
+            }
             createQueries(queries, shortPrefix, initialSuffixes);
         }
 
@@ -284,9 +287,9 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      */
     private StratifiedObservationRow<I> createShortPrefixRow(Word<I> shortPrefix) {
         StratifiedObservationRow<I> row = new StratifiedObservationRow<>(shortPrefix, allPrefixRows.size(), alphabet.size());
-        int counterValue = ComputeCounterValue.computeCounterValue(shortPrefix, alphabet);
+        int counterValue = ComputeCounterValue.computeCounterValue(shortPrefix, alphabet, maxLevel);
 
-        if (counterValue > maxLevel) {
+        if (counterValue == -1 || counterValue > maxLevel) {
             return null;
         }
 
@@ -304,8 +307,8 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      */
     private StratifiedObservationRow<I> createInternalPrefixRow(Word<I> longPrefix) {
         StratifiedObservationRow<I> row = new StratifiedObservationRow<>(longPrefix, allPrefixRows.size());
-        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet);
-        if (counterValue > maxLevel) {
+        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet, maxLevel);
+        if (counterValue == -1 || counterValue > maxLevel) {
             return null;
         }
         rowMap.put(longPrefix, row);
@@ -321,8 +324,8 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      */
     private StratifiedObservationRow<I> createCallPrefixRow(Word<I> longPrefix) {
         StratifiedObservationRow<I> row = new StratifiedObservationRow<>(longPrefix, allPrefixRows.size());
-        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet);
-        if (counterValue > maxLevel) {
+        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet, maxLevel);
+        if (counterValue == -1 || counterValue > maxLevel) {
             return null;
         }
         rowMap.put(longPrefix, row);
@@ -338,7 +341,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      */
     private StratifiedObservationRow<I> createReturnPrefixRow(Word<I> longPrefix) {
         StratifiedObservationRow<I> row = new StratifiedObservationRow<>(longPrefix, allPrefixRows.size());
-        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet);
+        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet, maxLevel);
         if (counterValue == -1 || counterValue > maxLevel) {
             return null;
         }
@@ -383,14 +386,62 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
 
     @Override
     public boolean isClosed() {
-        // TODO Auto-generated method stub
-        return MutableObservationTable.super.isClosed();
+        for (int i = 0 ; i <= maxLevel ; i++) {
+            for (I symbol : alphabet) {
+                if ((i == 0 && alphabet.isReturnSymbol(symbol)) || (i == maxLevel && alphabet.isCallSymbol(symbol))) {
+                    // We skip
+                    continue;
+                }
+
+                for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(i)) {
+                    StratifiedObservationRow<I> longPrefixRow = shortPrefixRow.getSuccessor(alphabet.getSymbolIndex(symbol));
+                    
+                    if (longPrefixRow == null) {
+                        return false;
+                    }
+                    
+                    // Same row content id => same information in the row => same equivalence class
+                    boolean hasClass = shortPrefixRows.get(i + ComputeCounterValue.signOf(symbol, alphabet)).
+                        stream().
+                        anyMatch(row -> row.getRowContentId() == longPrefixRow.getRowContentId());
+
+                    if (!hasClass) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     @Override
     public boolean isConsistent() {
-        // TODO Auto-generated method stub
-        return MutableObservationTable.super.isConsistent();
+        for (int i = 0; i <= maxLevel ; i++) {
+            for (I symbol : alphabet) {
+                if ((i == 0 && alphabet.isReturnSymbol(symbol)) || (i == maxLevel && alphabet.isCallSymbol(symbol))) {
+                    // We skip
+                    continue;
+                }
+
+                for (StratifiedObservationRow<I> uRow : shortPrefixRows.get(i)) {
+                    for (StratifiedObservationRow<I> vRow : shortPrefixRows.get(i)) {
+                        if (uRow.getRowContentId() == vRow.getRowContentId()) {
+                            StratifiedObservationRow<I> uaRow = rowMap.get(uRow.getLabel().append(symbol));
+                            StratifiedObservationRow<I> vaRow = rowMap.get(vRow.getLabel().append(symbol));
+
+                            if (uaRow == null || vaRow == null) {
+                                return false;
+                            }
+                            
+                            if (uaRow.getRowContentId() != vaRow.getRowContentId()) {
+                                return false;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     /**
