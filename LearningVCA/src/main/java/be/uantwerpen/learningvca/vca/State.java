@@ -44,6 +44,7 @@ public class State {
         this.callTransitions = new ArrayList<>(m + 1);
         this.returnTransitions = new ArrayList<>(m + 1);
         this.internalTransitions = new ArrayList<>(m + 1);
+        this.isAccepting = isAccepting;
 
         // By default, everything leads to the sink state (that is, everything is null)
         for (int i = 0 ; i <= m ; i++) {
@@ -137,6 +138,6 @@ public class State {
         if (internalSymbolId > m) {
             throw new IllegalArgumentException("Invalid function index for a internal successor for a state. Received " + functionIndex + " but the limit is " + m);
         }
-        returnTransitions.get(functionIndex).set(internalSymbolId, successor);
+        internalTransitions.get(functionIndex).set(internalSymbolId, successor);
     }
 }

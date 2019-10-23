@@ -161,7 +161,7 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
     // Since DeterministicAcceptorTS and SuffixOutput both defines computeOutput, we need to explicitly define our function
     @Override
     public Boolean computeOutput(Iterable<? extends I> input) {
-        return DeterministicAcceptorTS.super.computeOutput(input);
+        return accepts(input);
     }
 
     // For DeterministicAcceptorTS
