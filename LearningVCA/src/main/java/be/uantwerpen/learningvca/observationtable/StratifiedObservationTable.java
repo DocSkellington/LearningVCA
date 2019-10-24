@@ -116,6 +116,10 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         return allRowContents.size();
     }
 
+    public int numberOfSuffixes(int level) {
+        return getSuffixes(level).size();
+    }
+
     @Override
     public List<Word<I>> getSuffixes() {
         List<Word<I>> list = new LinkedList<>();
@@ -123,6 +127,10 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
             list.addAll(l);
         }
         return list;
+    }
+
+    public List<Word<I>> getSuffixes(int level) {
+        return suffixes.get(level);
     }
 
     @Override
@@ -222,7 +230,6 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      * @param numSuffixes The number of suffixes
      */
     private void fetchQueriesResults(Iterator<DefaultQuery<I, D>> queryIt, List<D> output, int numSuffixes) {
-        System.out.println("Fetching " + numSuffixes + " queries");
         for (int j = 0 ; j < numSuffixes ; j++) {
             DefaultQuery<I, D> query = queryIt.next();
             output.add(query.getOutput());
@@ -240,6 +247,8 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
     private boolean processContents(StratifiedObservationRow<I> row, List<D> rowContents) {
         boolean added = false;
         Integer contentID = rowContentsIdsMap.get(rowContents);
+        System.out.println(rowContents);
+        System.out.println(contentID);
         // If the row is not yet registered, we register it
         if (contentID == null) {
             added = true;
@@ -369,57 +378,89 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
             newSuffixesList.add(l);
         }
 
-        System.out.println("New suffixes: ");
-        for (int level = 0 ; level <= maxLevel ; level++) {
-            System.out.println(level + " : " + newSuffixesList.get(level));
-        }
-
-        // We create the queries needed to close every row
+        // We create the queries needed to fill every row
         List<DefaultQuery<I, D>> queries = new ArrayList<>();
 
         for (int level = 0 ; level <= maxLevel ; level++) {
             for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
-                System.out.println("Creating queries to close " + shortPrefixRow.getLabel() + " with " + newSuffixesList.get(level));
                 createQueries(queries, shortPrefixRow.getLabel(), newSuffixesList.get(level));
             }
         }
 
         for (StratifiedObservationRow<I> longPrefixRow : allLongPrefixRows) {
             Word<I> longPrefix = longPrefixRow.getLabel();
-            System.out.println("Creating queries to close " + longPrefix + " with " + newSuffixesList.get(ComputeCounterValue.computeCounterValue(longPrefix, alphabet)));
             createQueries(queries, longPrefix, newSuffixesList.get(ComputeCounterValue.computeCounterValue(longPrefix, alphabet)));
         }
 
         oracle.processQueries(queries);
 
         Iterator<DefaultQuery<I, D>> queryIt = queries.iterator();
+        // We need to know if we have already seen a row content in an other level
+        // Indeed, if two rows on different levels use the same row contents, it's possible that adding a new suffix makes them use different row contents
+        Map<List<D>, List<Integer>> rowContentsToLevels = new HashMap<>();
 
         // We start by updating the short prefixes
         for (int level = 0 ; level <= maxLevel ; level++) {
             for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
                 List<D> rowContents = allRowContents.get(shortPrefixRow.getRowContentId());
-                System.out.println("Updating short prefix " + shortPrefixRow.getLabel());
+                List<Word<I>> newSuffixesForThisLevel = newSuffixesList.get(level);
+                int oldNumberOfPrefixesForThisLevel = suffixes.get(level).size();
 
-                if (rowContents.size() == suffixes.get(level).size()) {
-                    // This row contents have not yet been modified
-                    // So, we just update the row contents
-                    System.out.println("Old size");
-                    rowContentsIdsMap.remove(rowContents);
-                    System.out.println("Before : " + rowContents);
-                    fetchQueriesResults(queryIt, rowContents, newSuffixesList.get(level).size());
-                    System.out.println("After : " + rowContents);
-                    rowContentsIdsMap.put(rowContents, shortPrefixRow.getRowContentId());
+                if (rowContents.size() == newSuffixesForThisLevel.size()) {
+                    // The row contents have a length equal to the old number of prefixes
+                    final int l = level;
+                    List<Integer> rowContentOnLevels = rowContentsToLevels.get(rowContents);
+                    if (rowContentOnLevels == null) {
+                        rowContentOnLevels = new ArrayList<>();
+                    }
+
+                    if (rowContentOnLevels.stream().anyMatch(i -> i != l)) {
+                        // The row contents is used on a different already seen level
+                        // Therefore, if we actually modify the row contents, we must change the id
+                        if (newSuffixesForThisLevel.size() != 0) {
+                            List<D> newRowContents = new ArrayList<>(oldNumberOfPrefixesForThisLevel + newSuffixesForThisLevel.size());
+                            newRowContents.addAll(rowContents.subList(0, oldNumberOfPrefixesForThisLevel));
+                            fetchQueriesResults(queryIt, newRowContents, newSuffixesForThisLevel.size());
+                            processContents(shortPrefixRow, newRowContents);
+                            List<Integer> levels = rowContentsToLevels.get(newRowContents);
+                            if (levels == null) {
+                                levels = new ArrayList<>();
+                            }
+                            levels.add(level);
+                            rowContentsToLevels.put(newRowContents, levels);
+                        }
+                        else {
+                            rowContentOnLevels.add(level);
+                            rowContentsToLevels.put(rowContents, rowContentOnLevels);
+                        }
+                    }
+                    else {
+                        // This is the first time we see this row contents
+                        // So, we just update the row contents
+                        rowContentsIdsMap.remove(rowContents);
+                        fetchQueriesResults(queryIt, rowContents, newSuffixesForThisLevel.size());
+                        rowContentsIdsMap.put(rowContents, shortPrefixRow.getRowContentId());
+                        List<Integer> levels = rowContentsToLevels.get(rowContents);
+                        if (levels == null) {
+                            levels = new ArrayList<>();
+                        }
+                        levels.add(level);
+                        rowContentsToLevels.put(rowContents, levels);
+                    }
                 }
                 else {
                     // This row contents have already been modified
                     // We need to check if this row must still use this row contents
-                    System.out.println("New size");
-                    System.out.println("Before : " + rowContents);
-                    List<D> newRowContents = new ArrayList<>(suffixes.get(level).size() + newSuffixesList.size());
-                    newRowContents.addAll(rowContents.subList(0, suffixes.get(level).size()));
-                    fetchQueriesResults(queryIt, newRowContents, newSuffixesList.get(level).size());
-                    System.out.println("After : " + newRowContents);
+                    List<D> newRowContents = new ArrayList<>(oldNumberOfPrefixesForThisLevel + newSuffixesList.size());
+                    newRowContents.addAll(rowContents.subList(0, oldNumberOfPrefixesForThisLevel));
+                    fetchQueriesResults(queryIt, newRowContents, newSuffixesForThisLevel.size());
                     processContents(shortPrefixRow, newRowContents);
+                    List<Integer> levels = rowContentsToLevels.get(newRowContents);
+                    if (levels == null) {
+                        levels = new ArrayList<>();
+                    }
+                    levels.add(level);
+                    rowContentsToLevels.put(newRowContents, levels);
                 }
             }
         }
@@ -431,18 +472,65 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         for (StratifiedObservationRow<I> longPrefixRow : allLongPrefixRows) {
             int rowContentId = longPrefixRow.getRowContentId();
             List<D> rowContents = allRowContents.get(rowContentId);
-            int counterValue = ComputeCounterValue.computeCounterValue(longPrefixRow.getLabel(), alphabet);
-            if (rowContents.size() == suffixes.get(counterValue).size()) {
-                // This row contents have not yet been modified
-                rowContentsIdsMap.remove(rowContents);
-                fetchQueriesResults(queryIt, rowContents, newSuffixesList.get(counterValue).size());
-                rowContentsIdsMap.put(rowContents, rowContentId);
+            int level = ComputeCounterValue.computeCounterValue(longPrefixRow.getLabel(), alphabet);
+
+            List<Word<I>> newSuffixesForThisLevel = newSuffixesList.get(level);
+            int oldNumberOfPrefixesForThisLevel = suffixes.get(level).size();
+
+            if (rowContents.size() == newSuffixesForThisLevel.size()) {
+                // The row contents have a length equal to the old number of prefixes
+                final int l = level;
+                List<Integer> rowContentOnLevels = rowContentsToLevels.get(rowContents);
+                if (rowContentOnLevels == null) {
+                    rowContentOnLevels = new ArrayList<>();
+                }
+
+                if (rowContentOnLevels.stream().anyMatch(i -> i != l)) {
+                    // The row contents is used on a different already seen level
+                    // Therefore, if we actually modify the row contents, we must change the id
+                    if (newSuffixesForThisLevel.size() != 0) {
+                        List<D> newRowContents = new ArrayList<>(oldNumberOfPrefixesForThisLevel + newSuffixesForThisLevel.size());
+                        newRowContents.addAll(rowContents.subList(0, oldNumberOfPrefixesForThisLevel));
+                        fetchQueriesResults(queryIt, newRowContents, newSuffixesForThisLevel.size());
+                        if (processContents(longPrefixRow, newRowContents)) {
+                            unclosed.add(new ArrayList<>());
+                        }
+                
+                        if (rowContentId >= numberOfDistinctShortPrefixRows) {
+                            unclosed.get(rowContentId - numberOfDistinctShortPrefixRows).add(longPrefixRow);
+                        }
+                        List<Integer> levels = rowContentsToLevels.get(newRowContents);
+                        if (levels == null) {
+                            levels = new ArrayList<>();
+                        }
+                        levels.add(level);
+                        rowContentsToLevels.put(newRowContents, levels);
+                    }
+                    else {
+                        rowContentOnLevels.add(level);
+                        rowContentsToLevels.put(rowContents, rowContentOnLevels);
+                    }
+                }
+                else {
+                    // This is the first time we see this row contents
+                    // So, we just update the row contents
+                    rowContentsIdsMap.remove(rowContents);
+                    fetchQueriesResults(queryIt, rowContents, newSuffixesForThisLevel.size());
+                    rowContentsIdsMap.put(rowContents, longPrefixRow.getRowContentId());
+                    List<Integer> levels = rowContentsToLevels.get(rowContents);
+                    if (levels == null) {
+                        levels = new ArrayList<>();
+                    }
+                    levels.add(level);
+                    rowContentsToLevels.put(rowContents, levels);
+                }
             }
             else {
                 // This row contents have already been modified
-                List<D> newRowContents = new ArrayList<>(suffixes.get(counterValue).size() + newSuffixesList.size());
-                newRowContents.addAll(rowContents.subList(0, suffixes.get(counterValue).size()));
-                fetchQueriesResults(queryIt, newRowContents, newSuffixesList.get(counterValue).size());
+                System.out.println("HERE " + longPrefixRow.getLabel());
+                List<D> newRowContents = new ArrayList<>(suffixes.get(level).size() + newSuffixesList.size());
+                newRowContents.addAll(rowContents.subList(0, suffixes.get(level).size()));
+                fetchQueriesResults(queryIt, newRowContents, newSuffixesList.get(level).size());
                 if (processContents(longPrefixRow, newRowContents)) {
                     unclosed.add(new ArrayList<>());
                 }
@@ -450,10 +538,19 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
                 if (rowContentId >= numberOfDistinctShortPrefixRows) {
                     unclosed.get(rowContentId - numberOfDistinctShortPrefixRows).add(longPrefixRow);
                 }
+
+                List<Integer> levels = rowContentsToLevels.get(newRowContents);
+                if (levels == null) {
+                    levels = new ArrayList<>();
+                }
+                levels.add(level);
+                rowContentsToLevels.put(newRowContents, levels);
             }
         }
 
-        suffixes.addAll(newSuffixesList);
+        for (int i = 0 ; i < newSuffixesList.size() ; i++) {
+            suffixes.get(i).addAll(newSuffixesList.get(i));
+        }
 
         return unclosed;
     }
@@ -461,6 +558,21 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
     @Override
     public List<List<Row<I>>> addShortPrefixes(List<? extends Word<I>> shortPrefixes, MembershipOracle<I, D> oracle) {
         List<Row<I>> toShortPrefixRows = new ArrayList<>(shortPrefixes.size());
+        /*
+        for (Word<I> shortPrefix : shortPrefixes) {
+            int counterValue = ComputeCounterValue.computeCounterValue(shortPrefix, alphabet);
+            increaseLevelLimit(counterValue);
+            Row<I> row = getRow(shortPrefix);
+            if (row == null) {
+                row = createShortPrefixRow(shortPrefix);
+            }
+            else if (row.isShortPrefixRow()) {
+                // We skip
+                continue;
+            }
+            toShortPrefixRows.add(row);
+        }
+        */
 
         for (Word<I> shortPrefix : shortPrefixes) {
             int counterValue = ComputeCounterValue.computeCounterValue(shortPrefix, alphabet);
@@ -626,7 +738,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
     }
 
     @Override
-    public Row<I> findUnclosedRow() {
+    public StratifiedObservationRow<I> findUnclosedRow() {
         for (int i = 0 ; i <= maxLevel ; i++) {
             for (I symbol : alphabet) {
                 if ((i == 0 && alphabet.isReturnSymbol(symbol)) || (i == maxLevel && alphabet.isCallSymbol(symbol))) {
@@ -638,15 +750,22 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
                     StratifiedObservationRow<I> longPrefixRow = shortPrefixRow.getSuccessor(alphabet.getSymbolIndex(symbol));
                     
                     if (longPrefixRow == null) {
+                        System.out.println("NULL");
                         return shortPrefixRow;
                     }
+                    System.out.println("Checking for " + shortPrefixRow.getLabel() + ", " + longPrefixRow.getLabel() + " " + longPrefixRow.getRowContentId());
+                    System.out.println(i + " " + symbol);
                     
                     // Same row content id => same information in the row => same equivalence class
                     boolean hasClass = shortPrefixRows.get(i + ComputeCounterValue.signOf(symbol, alphabet)).
                         stream().
-                        anyMatch(row -> row.getRowContentId() == longPrefixRow.getRowContentId());
+                        anyMatch(row -> {
+                            System.out.println(row.getLabel() + ", " + row.getRowContentId());
+                            return row.getRowContentId() == longPrefixRow.getRowContentId();
+                        });
 
                     if (!hasClass) {
+                        System.out.println("No class: " + symbol);
                         return shortPrefixRow;
                     }
                 }

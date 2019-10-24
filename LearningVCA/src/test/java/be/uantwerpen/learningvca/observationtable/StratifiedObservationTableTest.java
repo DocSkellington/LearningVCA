@@ -13,6 +13,7 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import be.uantwerpen.learningvca.util.ComputeCounterValue;
 import be.uantwerpen.learningvca.vca.State;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
@@ -50,7 +51,7 @@ public class StratifiedObservationTableTest {
         oracle = new SimulatorOracle<>(vca);
     }
 
-    // @Test
+    @Test
     public void testInitialisation() {
         assertFalse(table.isInitialized());
 
@@ -94,14 +95,14 @@ public class StratifiedObservationTableTest {
         // TODO check that for every prefix and for suffix v, uv is in Sigma_{0, t}*?
     }
 
-    // @Test(expected = InvalidParameterException.class)
+    @Test(expected = InvalidParameterException.class)
     public void testBadInitialisation() {
         List<Word<Character>> prefixes = Arrays.asList(Word.fromSymbols('a', 'b'));
         List<Word<Character>> suffixes = Arrays.asList(Word.epsilon());
         table.initialize(prefixes, suffixes, oracle);
     }
 
-    // @Test
+    @Test
     public void testAddOneShortPrefixAlreadyInTableAsShortPrefix() {
         table.initialize(Arrays.asList(Word.epsilon()), Arrays.asList(Word.epsilon()), oracle);
 
@@ -119,7 +120,7 @@ public class StratifiedObservationTableTest {
         assertTrue(table.isConsistent());
     }
 
-    // @Test
+    @Test
     public void testAddOneNewShortPrefix() {
         table.initialize(Arrays.asList(Word.epsilon()), Arrays.asList(Word.epsilon()), oracle);
 
@@ -155,34 +156,48 @@ public class StratifiedObservationTableTest {
         assertTrue(table.isConsistent());
     }
 
+    // @Test
+    public void testAddTwoNewPrefixes() {
+        table.initialize(Arrays.asList(Word.epsilon()), Arrays.asList(Word.epsilon()), oracle);
+
+        List<List<Row<Character>>> unclosed = table.addShortPrefixes(Arrays.asList(Word.fromLetter('a'), Word.fromString("ac")), oracle);
+        assertEquals(1, unclosed.size());
+    }
+
     @Test
     public void testAddSuffix() {
-        System.out.println(vca.computeOutput(Word.fromString("acb")));
-
         table.initialize(Arrays.asList(Word.epsilon()), Arrays.asList(Word.epsilon()), oracle);
 
         table.addShortPrefixes(Arrays.asList(Word.fromLetter('a'), Word.fromSymbols('a', 'c')), oracle);
 
-        assertEquals(1, table.numberOfDistinctRows());
+        assertEquals(2, table.numberOfDistinctRows());
         assertEquals(3, table.numberOfShortPrefixRows());
         assertEquals(7, table.numberOfLongPrefixRows());
         assertEquals(10, table.numberOfRows());
+        assertEquals(2, table.numberOfSuffixes());
+        assertEquals(1, table.numberOfSuffixes(0));
+        assertEquals(1, table.numberOfSuffixes(1));
 
-        table.addSuffix(Word.fromLetter('b'), 1, oracle);
+        List<List<Row<Character>>> unclosed = table.addSuffix(Word.fromLetter('b'), 1, oracle);
+        System.out.println(unclosed.size());
 
-        assertEquals(3, table.numberOfSuffixes());
         for (Row<Character> row : table.getAllRows()) {
             System.out.println(row.getLabel() + " " + row.getRowContentId());
+            int level = ComputeCounterValue.computeCounterValue(row.getLabel(), alphabet);
             System.out.println("Contents:");
-            for (int i = 0 ; i < alphabet.size() ; i++) {
-                try {
-                    System.out.print(table.cellContents(row, i) + " ");
-                } catch (Exception e) {
-                    //TODO: handle exception
-                }
+            for (int i = 0 ; i < table.numberOfSuffixes(level) ; i++) {
+                System.out.print("(" + table.getSuffixes(level).get(i) + ", " + table.cellContents(row, i) + ") ");
             }
             System.out.println();
         }
-        assertEquals(3, table.numberOfDistinctRows());
+
+        assertEquals(3, table.numberOfSuffixes());
+        assertEquals(4, table.numberOfDistinctRows());
+        assertEquals(1, table.numberOfSuffixes(0));
+        assertEquals(2, table.numberOfSuffixes(1));
+
+        System.out.println("UNCLOSED " + table.findUnclosedRow().getLabel());
+        assertFalse(table.isClosed()); // "acb" does not have an equivalence class
+        assertTrue(table.isConsistent()); // Each equivalence class has only one representative
     }
 }
