@@ -33,9 +33,6 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
     // A prefix (or representative) is short if it is in the upper half of the observation table.
     // That is, it is short if it one of the row used for the creation of the automaton
     private final List<List<StratifiedObservationRow<I>>> shortPrefixRows;
-    private final List<StratifiedObservationRow<I>> internalPrefixRows;
-    private final List<StratifiedObservationRow<I>> callPrefixRows;
-    private final List<StratifiedObservationRow<I>> returnPrefixRows;
     private final List<StratifiedObservationRow<I>> allLongPrefixRows;
     private final List<StratifiedObservationRow<I>> allPrefixRows;
 
@@ -55,9 +52,6 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
     public StratifiedObservationTable(VPDAlphabet<I> alphabet) {
         this.alphabet = alphabet;
         this.shortPrefixRows = new LinkedList<>();
-        this.internalPrefixRows = new LinkedList<>();
-        this.callPrefixRows = new LinkedList<>();
-        this.returnPrefixRows = new LinkedList<>();
         this.allLongPrefixRows = new LinkedList<>();
         this.allPrefixRows = new LinkedList<>();
 
@@ -102,10 +96,8 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
 
     @Override
     public Collection<Row<I>> getLongPrefixRows() {
-        List<Row<I>> list = new LinkedList<>();
-        list.addAll(internalPrefixRows);
-        list.addAll(callPrefixRows);
-        list.addAll(returnPrefixRows);
+        List<Row<I>> list = new ArrayList<>(allLongPrefixRows.size());
+        list.addAll(allLongPrefixRows);
         return list;
     }
 
@@ -230,6 +222,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      * @param numSuffixes The number of suffixes
      */
     private void fetchQueriesResults(Iterator<DefaultQuery<I, D>> queryIt, List<D> output, int numSuffixes) {
+        System.out.println("Fetching " + numSuffixes + " queries");
         for (int j = 0 ; j < numSuffixes ; j++) {
             DefaultQuery<I, D> query = queryIt.next();
             output.add(query.getOutput());
@@ -297,25 +290,9 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
 
             if (successorRow == null) {
                 // We create the long prefix row
-                switch (alphabet.getSymbolType(symbol)) {
-                    case CALL:
-                        successorRow = createCallPrefixRow(longPrefix);
-                        if (successorRow != null) {
-                            createQueries(queries, longPrefix, suffixes.get(counterValue + 1));
-                        }
-                        break;
-                    case RETURN:
-                        successorRow = createReturnPrefixRow(longPrefix);
-                        if (successorRow != null) {
-                            createQueries(queries, longPrefix, suffixes.get(counterValue - 1));
-                        }
-                        break;
-                    case INTERNAL:
-                        successorRow = createInternalPrefixRow(longPrefix);
-                        if (successorRow != null) {
-                            createQueries(queries, longPrefix, suffixes.get(counterValue));
-                        }
-                        break;
+                successorRow = createLongPrefixRow(longPrefix);
+                if (successorRow != null) {
+                    createQueries(queries, longPrefix, suffixes.get(counterValue + ComputeCounterValue.signOf(symbol, alphabet)));
                 }
             }
 
@@ -324,54 +301,17 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
     }
 
     /**
-     * Creates a row for a long prefix built with an internal symbol
+     * Creates a row for a long prefix.
      * @param longPrefix The long prefix
-     * @return A row for the long prefix
+     * @return A row for the long prefix or null if the long prefix is invalid
      */
-    private StratifiedObservationRow<I> createInternalPrefixRow(Word<I> longPrefix) {
+    private StratifiedObservationRow<I> createLongPrefixRow(Word<I> longPrefix) {
         StratifiedObservationRow<I> row = new StratifiedObservationRow<>(longPrefix, allPrefixRows.size());
         int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet, maxLevel);
         if (counterValue == -1 || counterValue > maxLevel) {
             return null;
         }
         rowMap.put(longPrefix, row);
-        internalPrefixRows.add(row);
-        allPrefixRows.add(row);
-        allLongPrefixRows.add(row);
-        return row;
-    }
-
-    /**
-     * Creates a row for a long prefix built with a call symbol
-     * @param longPrefix The long prefix
-     * @return A row for the long prefix
-     */
-    private StratifiedObservationRow<I> createCallPrefixRow(Word<I> longPrefix) {
-        StratifiedObservationRow<I> row = new StratifiedObservationRow<>(longPrefix, allPrefixRows.size());
-        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet, maxLevel);
-        if (counterValue == -1 || counterValue > maxLevel) {
-            return null;
-        }
-        rowMap.put(longPrefix, row);
-        callPrefixRows.add(row);
-        allPrefixRows.add(row);
-        allLongPrefixRows.add(row);
-        return row;
-    }
-
-    /**
-     * Creates a row for a long prefix built with a return symbol
-     * @param longPrefix The long prefix
-     * @return A row for the long prefix
-     */
-    private StratifiedObservationRow<I> createReturnPrefixRow(Word<I> longPrefix) {
-        StratifiedObservationRow<I> row = new StratifiedObservationRow<>(longPrefix, allPrefixRows.size());
-        int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet, maxLevel);
-        if (counterValue == -1 || counterValue > maxLevel) {
-            return null;
-        }
-        rowMap.put(longPrefix, row);
-        returnPrefixRows.add(row);
         allPrefixRows.add(row);
         allLongPrefixRows.add(row);
         return row;
@@ -389,8 +329,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
 
     @Override
     public List<List<Row<I>>> addSuffixes(Collection<? extends Word<I>> newSuffixes, MembershipOracle<I, D> oracle) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException("StratifiedObservationTable: you must specify the levels of the new suffixes");
     }
 
     /**
@@ -401,7 +340,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      * @return A list of equivalence classes of unclosed rows
      */
     public List<List<Row<I>>> addSuffix(Word<I> suffix, int suffixLevel, MembershipOracle<I, D> oracle) {
-        return addSuffixes(Arrays.asList(suffix), Arrays.asList(suffixLevel), oracle);
+        return addSuffixes(Collections.singletonList(suffix), Collections.singletonList(suffixLevel), oracle);
     }
 
     /**
@@ -419,10 +358,10 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         }
 
         List<List<Word<I>>> newSuffixesList = new ArrayList<>(maxLevel + 1);
+        // We keep only the really new suffixes and we store them by level
         for (int level = 0 ; level <= maxLevel ; level++) {
             List<Word<I>> l = new ArrayList<>(newSuffixes.size());
             for (int j = 0 ; j < newSuffixes.size() ; j++) {
-                // We keep only the really new suffixes
                 if (newSuffixesLevels.get(j) == level && !suffixes.get(level).contains(newSuffixes.get(j))) {
                     l.add(newSuffixes.get(j));
                 }
@@ -430,22 +369,93 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
             newSuffixesList.add(l);
         }
 
+        System.out.println("New suffixes: ");
+        for (int level = 0 ; level <= maxLevel ; level++) {
+            System.out.println(level + " : " + newSuffixesList.get(level));
+        }
+
+        // We create the queries needed to close every row
         List<DefaultQuery<I, D>> queries = new ArrayList<>();
 
         for (int level = 0 ; level <= maxLevel ; level++) {
             for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
+                System.out.println("Creating queries to close " + shortPrefixRow.getLabel() + " with " + newSuffixesList.get(level));
                 createQueries(queries, shortPrefixRow.getLabel(), newSuffixesList.get(level));
             }
         }
 
         for (StratifiedObservationRow<I> longPrefixRow : allLongPrefixRows) {
             Word<I> longPrefix = longPrefixRow.getLabel();
-            createQueries(queries, longPrefixRow.getLabel(), newSuffixesList.get(ComputeCounterValue.computeCounterValue(longPrefix, alphabet)));
+            System.out.println("Creating queries to close " + longPrefix + " with " + newSuffixesList.get(ComputeCounterValue.computeCounterValue(longPrefix, alphabet)));
+            createQueries(queries, longPrefix, newSuffixesList.get(ComputeCounterValue.computeCounterValue(longPrefix, alphabet)));
         }
 
         oracle.processQueries(queries);
-        // TODO
-        return null;
+
+        Iterator<DefaultQuery<I, D>> queryIt = queries.iterator();
+
+        // We start by updating the short prefixes
+        for (int level = 0 ; level <= maxLevel ; level++) {
+            for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
+                List<D> rowContents = allRowContents.get(shortPrefixRow.getRowContentId());
+                System.out.println("Updating short prefix " + shortPrefixRow.getLabel());
+
+                if (rowContents.size() == suffixes.get(level).size()) {
+                    // This row contents have not yet been modified
+                    // So, we just update the row contents
+                    System.out.println("Old size");
+                    rowContentsIdsMap.remove(rowContents);
+                    System.out.println("Before : " + rowContents);
+                    fetchQueriesResults(queryIt, rowContents, newSuffixesList.get(level).size());
+                    System.out.println("After : " + rowContents);
+                    rowContentsIdsMap.put(rowContents, shortPrefixRow.getRowContentId());
+                }
+                else {
+                    // This row contents have already been modified
+                    // We need to check if this row must still use this row contents
+                    System.out.println("New size");
+                    System.out.println("Before : " + rowContents);
+                    List<D> newRowContents = new ArrayList<>(suffixes.get(level).size() + newSuffixesList.size());
+                    newRowContents.addAll(rowContents.subList(0, suffixes.get(level).size()));
+                    fetchQueriesResults(queryIt, newRowContents, newSuffixesList.get(level).size());
+                    System.out.println("After : " + newRowContents);
+                    processContents(shortPrefixRow, newRowContents);
+                }
+            }
+        }
+
+        List<List<Row<I>>> unclosed = new ArrayList<>();
+        int numberOfDistinctShortPrefixRows = numberOfDistinctRows();
+
+        // Then, the long prefix rows
+        for (StratifiedObservationRow<I> longPrefixRow : allLongPrefixRows) {
+            int rowContentId = longPrefixRow.getRowContentId();
+            List<D> rowContents = allRowContents.get(rowContentId);
+            int counterValue = ComputeCounterValue.computeCounterValue(longPrefixRow.getLabel(), alphabet);
+            if (rowContents.size() == suffixes.get(counterValue).size()) {
+                // This row contents have not yet been modified
+                rowContentsIdsMap.remove(rowContents);
+                fetchQueriesResults(queryIt, rowContents, newSuffixesList.get(counterValue).size());
+                rowContentsIdsMap.put(rowContents, rowContentId);
+            }
+            else {
+                // This row contents have already been modified
+                List<D> newRowContents = new ArrayList<>(suffixes.get(counterValue).size() + newSuffixesList.size());
+                newRowContents.addAll(rowContents.subList(0, suffixes.get(counterValue).size()));
+                fetchQueriesResults(queryIt, newRowContents, newSuffixesList.get(counterValue).size());
+                if (processContents(longPrefixRow, newRowContents)) {
+                    unclosed.add(new ArrayList<>());
+                }
+                
+                if (rowContentId >= numberOfDistinctShortPrefixRows) {
+                    unclosed.get(rowContentId - numberOfDistinctShortPrefixRows).add(longPrefixRow);
+                }
+            }
+        }
+
+        suffixes.addAll(newSuffixesList);
+
+        return unclosed;
     }
 
     @Override
@@ -483,6 +493,9 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
                     fetchQueriesResults(queryIt, rowContents, numSuffixes);
                     processContents(successorRow, rowContents);
                 }
+
+                // We must set the successor of the longest prefix of shortPrefix
+                getRow(shortPrefix.subWord(0, shortPrefix.size() - 1)).setSuccessor(alphabet.getSymbolIndex(shortPrefix.lastSymbol()), shortPrefixRow);
             }
             else if (!shortPrefixRows.get(counterValue).contains(shortPrefixRow)) {
                 toShortPrefixRows.add(shortPrefixRow);
@@ -507,18 +520,6 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
         }
 
         Word<I> longPrefix = row.getLabel();
-        // We remove row from the appropriate long prefix storage
-        switch(alphabet.getSymbolType(longPrefix.lastSymbol())) {
-            case CALL:
-                callPrefixRows.remove(row);
-                break;
-            case RETURN:
-                returnPrefixRows.remove(row);
-                break;
-            case INTERNAL:
-                internalPrefixRows.remove(row);
-                break;
-        }
         allLongPrefixRows.remove(row);
 
         int counterValue = ComputeCounterValue.computeCounterValue(longPrefix, alphabet);
@@ -590,6 +591,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
      * Increases the max level of this table.
      * 
      * That is, words are allowed to have a counter value up to the new limit.
+     * The empty word is automatically added to the new suffixes.
      * 
      * If the new limit is lower than the current limit, nothing happens
      * @param newLimit The new limit
@@ -602,6 +604,7 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
             }
             while (suffixes.size() <= newLimit) {
                 suffixes.add(new LinkedList<>());
+                suffixes.get(suffixes.size() - 1).add(Word.epsilon());
             }
         }
     }
@@ -675,12 +678,10 @@ public class StratifiedObservationTable<I, D> implements MutableObservationTable
                             }
 
                             if (uaRow == null || vaRow == null) {
-                                System.out.println("Null");
                                 return new Inconsistency<>(uRow, vRow, symbol);
                             }
                             
                             if (uaRow.getRowContentId() != vaRow.getRowContentId()) {
-                                System.out.println("Different");
                                 return new Inconsistency<>(uRow, vRow, symbol);
                             }
                         }
