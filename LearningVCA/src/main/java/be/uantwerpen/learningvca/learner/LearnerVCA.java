@@ -8,6 +8,7 @@ import java.util.List;
 import be.uantwerpen.learningvca.behaviorgraph.Description;
 import be.uantwerpen.learningvca.behaviorgraph.LimitedBehaviorGraph;
 import be.uantwerpen.learningvca.observationtable.StratifiedObservationTable;
+import be.uantwerpen.learningvca.observationtable.StratifiedObservationTableBoolean;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
 import be.uantwerpen.learningvca.util.ComputeCounterValue;
 import be.uantwerpen.learningvca.vca.VCA;
@@ -38,7 +39,7 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
         this.membershipOracle = membershipOracle;
         this.partialEquivalenceOracle = partialEquivalenceOracle;
         this.descriptions = new LinkedList<>();
-        this.stratifiedObservationTable = new StratifiedObservationTable<>(alphabet);
+        this.stratifiedObservationTable = new StratifiedObservationTableBoolean<>(alphabet);
     }
 
     @Override

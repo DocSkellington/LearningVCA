@@ -87,7 +87,7 @@ public class State {
      * @param successor The successor
      */
     public void setCallSuccessor(int callSymbolId, int functionIndex, State successor) {
-        if (callSymbolId > m) {
+        if (functionIndex > m) {
             throw new IllegalArgumentException("Invalid function index for a call successor for a state. Received " + functionIndex + " but the limit is " + m);
         }
         callTransitions.get(functionIndex).set(callSymbolId, successor);
@@ -111,7 +111,7 @@ public class State {
      * @param successor The successor
      */
     public void setReturnSuccessor(int returnSymbolId, int functionIndex, State successor) {
-        if (returnSymbolId > m) {
+        if (functionIndex > m) {
             throw new IllegalArgumentException("Invalid function index for a return successor for a state. Received " + functionIndex + " but the limit is " + m);
         }
         returnTransitions.get(functionIndex).set(returnSymbolId, successor);
@@ -135,7 +135,7 @@ public class State {
      * @param successor The successor
      */
     public void setInternalSuccessor(int internalSymbolId, int functionIndex, State successor) {
-        if (internalSymbolId > m) {
+        if (functionIndex > m) {
             throw new IllegalArgumentException("Invalid function index for a internal successor for a state. Received " + functionIndex + " but the limit is " + m);
         }
         internalTransitions.get(functionIndex).set(internalSymbolId, successor);

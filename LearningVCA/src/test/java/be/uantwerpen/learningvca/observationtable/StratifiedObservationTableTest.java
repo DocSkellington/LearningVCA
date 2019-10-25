@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.security.InvalidParameterException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Before;
@@ -33,7 +34,7 @@ public class StratifiedObservationTableTest {
     public void init() {
         // We have one useless internal symbol (as it is not used by the VCA)
         alphabet = new DefaultVPDAlphabet<>(Arrays.asList('c', 'd'), Arrays.asList('a'), Arrays.asList('b'));
-        table = new StratifiedObservationTable<>(alphabet);
+        table = new StratifiedObservationTableBoolean<>(alphabet);
 
         vca = new VCA<>(alphabet, 1);
         State q0 = vca.addInitialState(false);
@@ -194,5 +195,37 @@ public class StratifiedObservationTableTest {
 
         assertFalse(table.isClosed()); // "acb" does not have an equivalence class
         assertTrue(table.isConsistent()); // Each equivalence class has only one representative
+    }
+
+    @Test
+    public void testToVCA() {
+        table.initialize(Collections.singletonList(Word.epsilon()), Collections.singletonList(Word.epsilon()), oracle);
+
+        VCA<Character> simpleVCA = table.toVCA();
+        assertEquals(1, simpleVCA.size());
+        assertFalse(simpleVCA.getInitialLocation().isAccepting());
+        assertFalse(simpleVCA.accepts(Word.epsilon()));
+        assertFalse(simpleVCA.accepts(Word.fromString("a")));
+        assertFalse(simpleVCA.accepts(Word.fromString("c")));
+        assertFalse(simpleVCA.accepts(Word.fromString("b")));
+        assertFalse(simpleVCA.accepts(Word.fromString("ac")));
+        assertFalse(simpleVCA.accepts(Word.fromString("acb")));
+
+        table.addShortPrefixes(Arrays.asList(Word.fromString("a"), Word.fromString("ac"), Word.fromString("acb")), oracle);
+        assertTrue(table.isClosed());
+        table.addSuffix(Word.fromString("b"), 1, oracle);
+        assertTrue(table.isConsistent());
+
+        VCA<Character> biggerVCA = table.toVCA();
+        assertEquals(4, biggerVCA.size());
+
+        assertTrue(biggerVCA.accepts(Word.fromString("acb")));
+        assertTrue(biggerVCA.accepts(Word.fromString("accb")));
+        assertTrue(biggerVCA.accepts(Word.fromString("accccb")));
+        assertFalse(biggerVCA.accepts(Word.epsilon()));
+        assertFalse(biggerVCA.accepts(Word.fromString("a")));
+        assertFalse(biggerVCA.accepts(Word.fromString("ac")));
+        assertFalse(biggerVCA.accepts(Word.fromString("ab")));
+        assertFalse(biggerVCA.accepts(Word.fromString("aacbb")));
     }
 }
