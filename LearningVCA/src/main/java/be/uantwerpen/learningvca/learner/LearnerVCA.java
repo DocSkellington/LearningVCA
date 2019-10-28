@@ -14,8 +14,9 @@ import be.uantwerpen.learningvca.util.ComputeCounterValue;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
+import de.learnlib.datastructure.observationtable.Inconsistency;
 import de.learnlib.datastructure.observationtable.OTLearner;
-import de.learnlib.datastructure.observationtable.ObservationTable;
+import de.learnlib.datastructure.observationtable.Row;
 import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.Word;
 
@@ -93,25 +94,62 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
     }
 
     /**
-     * Gets the VCA built from the observation table
-     * @return The t-VCA
-     */
-    public VCA<I> getObservationTableVCA() {
-        return stratifiedObservationTable.toVCA();
-    }
-
-    /**
      * Learns the behavior graph up to the given threshold
      * @param t The threshold
      * @return The limited behavior graph learnt
      */
     private LimitedBehaviorGraph<I> learnBehaviorGraphUpTo(int t) {
-        // TODO
-        return null;
+        DefaultQuery<I, Boolean> counterexample = null;
+        LimitedBehaviorGraph<I> limitedBehaviorGraph = null;
+        do {
+            // We process the counterexample
+            if (counterexample != null) {
+                Word<I> counterexampleWord = counterexample.getInput();
+                List<Word<I>> prefixes = new ArrayList<>(counterexampleWord.size());
+                List<Word<I>> suffixes = new ArrayList<>(counterexampleWord.size());
+                List<Integer> suffixesLevels = new ArrayList<>(counterexampleWord.size());
+                for (int i = 0 ; i < counterexampleWord.size() ; i++) {
+                    Word<I> prefix = counterexampleWord.subWord(0, i);
+                    Word<I> suffix = counterexampleWord.subWord(i);
+                    prefixes.add(prefix);
+                    suffixes.add(suffix);
+                    suffixesLevels.add(ComputeCounterValue.computeCounterValue(suffix, alphabet));
+                }
+                stratifiedObservationTable.addShortPrefixes(prefixes, membershipOracle);
+                stratifiedObservationTable.addSuffixes(suffixes, suffixesLevels, membershipOracle);
+            }
+
+            // We make the table closed and consistent
+            boolean closedAndConsistent = true;
+            do {
+                closedAndConsistent = true;
+                Row<I> unclosedRow = null;
+                while ((unclosedRow = stratifiedObservationTable.findUnclosedRow()) != null) {
+                    // unclosedRow is directly the long prefix to add
+                    stratifiedObservationTable.addShortPrefixes(Arrays.asList(unclosedRow.getLabel()), membershipOracle);
+                    closedAndConsistent = false;
+                }
+
+                Inconsistency<I> inconsistency = null;
+                while ((inconsistency = stratifiedObservationTable.findInconsistency()) != null) {
+                    Word<I> w = stratifiedObservationTable.findDistinguishingSuffix(inconsistency);
+                    Word<I> aw = w.prepend(inconsistency.getSymbol());
+                    int counterValue = ComputeCounterValue.computeCounterValue(inconsistency.getFirstRow().getLabel(), alphabet);
+                    stratifiedObservationTable.addSuffix(aw, counterValue, membershipOracle);
+                    closedAndConsistent = false;
+                }
+            } while (!closedAndConsistent);
+
+            // We compute the new limited behavior graph and check if there exists a counterexample
+            limitedBehaviorGraph = stratifiedObservationTable.toLimitedBehaviorGraph();
+            counterexample = partialEquivalenceOracle.findCounterExample(limitedBehaviorGraph, stratifiedObservationTable.getLevelLimit(), alphabet);
+        } while (counterexample != null);
+
+        return limitedBehaviorGraph;
     }
 
     @Override
-    public ObservationTable<I, Boolean> getObservationTable() {
+    public StratifiedObservationTable<I, Boolean> getObservationTable() {
         return stratifiedObservationTable;
     }
 

@@ -67,7 +67,7 @@ public class LearningVCA {
 
             if (counterexample == null && answer == null) {
                 // We didn't find a counter example nor an appropriate VCA
-                counterexample = equivalenceVCAOracle.findCounterExample(learner.getObservationTableVCA(), alphabet);
+                counterexample = equivalenceVCAOracle.findCounterExample(learner.getObservationTable().toVCA(), alphabet);
             }
         } while (counterexample != null);
 

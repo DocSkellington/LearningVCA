@@ -23,6 +23,9 @@ public class PartialEquivalenceOracle<I extends Comparable<I>> {
     }
 
     public DefaultQuery<I, Boolean> findCounterExample(CompactDFA<I> hypothesis, int threshold, Collection<? extends I> inputs) {
+        // TODO use the fact that BG is unique for a language
+        // That is, use a BFS to check if the behavior graphs are identical (up to t)
+        // This would allow to have loops over internal symbols
         CompactDFA<I> sul = behaviorGraph.toDFA(threshold);
 
         DFAEquivalenceOracle<I> oracle = new SimulatorEQOracle.DFASimulatorEQOracle<>(sul);
