@@ -27,7 +27,7 @@ import net.automatalib.words.Word;
  * @param <D> The type of the information to store in the table
  * @author Gaëtan Staquet
  */
-public abstract class AbstractStratifiedObservationTable<I, D> implements StratifiedObservationTable<I, D> {
+public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>, D> implements StratifiedObservationTable<I, D> {
     protected final VPDAlphabet<I> alphabet;
     // A prefix (or representative) is short if it is in the upper half of the observation table.
     // That is, it is short if it one of the row used for the creation of the automaton
@@ -715,7 +715,7 @@ public abstract class AbstractStratifiedObservationTable<I, D> implements Strati
                     StratifiedObservationRow<I> longPrefixRow = shortPrefixRow.getSuccessor(alphabet.getSymbolIndex(symbol));
                     
                     if (longPrefixRow == null) {
-                        return shortPrefixRow;
+                        return longPrefixRow;
                     }
                     
                     // Same row content id => same information in the row => same equivalence class
@@ -724,7 +724,7 @@ public abstract class AbstractStratifiedObservationTable<I, D> implements Strati
                         anyMatch(row -> row.getRowContentId() == longPrefixRow.getRowContentId());
 
                     if (!hasClass) {
-                        return shortPrefixRow;
+                        return longPrefixRow;
                     }
                 }
             }
@@ -764,6 +764,22 @@ public abstract class AbstractStratifiedObservationTable<I, D> implements Strati
                         }
                     }
                 }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Gets a representative for the given row.
+     * 
+     * Since the rows are stored in lists, the same row contents id implies the same returned representative.
+     * @param row The row we want a representative of
+     * @return A representative
+     */
+    protected StratifiedObservationRow<I> getRepresentativeRow(StratifiedObservationRow<I> row) {
+        for (StratifiedObservationRow<I> spRow : shortPrefixRows.get(ComputeCounterValue.computeCounterValue(row.getLabel(), alphabet))) {
+            if (spRow.getRowContentId() == row.getRowContentId()) {
+                return spRow;
             }
         }
         return null;

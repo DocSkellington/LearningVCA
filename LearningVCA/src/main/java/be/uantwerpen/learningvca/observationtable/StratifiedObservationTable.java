@@ -4,6 +4,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import be.uantwerpen.learningvca.behaviorgraph.LimitedBehaviorGraph;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.datastructure.observationtable.MutableObservationTable;
@@ -16,7 +17,7 @@ import net.automatalib.words.Word;
  * @param <D> The type of the information to store in the table
  * @author Gaëtan Staquet
  */
-public interface StratifiedObservationTable<I, D> extends MutableObservationTable<I, D> {
+public interface StratifiedObservationTable<I extends Comparable<I>, D> extends MutableObservationTable<I, D> {
     /**
      * Gets the number of suffixes in the given level
      * @param level The level
@@ -69,6 +70,12 @@ public interface StratifiedObservationTable<I, D> extends MutableObservationTabl
      * @return The t-VCA
      */
     public VCA<I> toVCA();
+
+    /**
+     * Constructs a behavior graph limited up to the maximum level of this table.
+     * @return The limited behavior graph this table defines
+     */
+    public LimitedBehaviorGraph<I> toLimitedBehaviorGraph();
 
     @Override
     public StratifiedObservationRow<I> getRow(Word<I> word);
