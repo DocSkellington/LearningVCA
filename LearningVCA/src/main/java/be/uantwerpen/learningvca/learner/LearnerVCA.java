@@ -47,6 +47,9 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
     @Override
     public void startLearning() {
         this.stratifiedObservationTable.initialize(Arrays.asList(Word.epsilon()), Arrays.asList(Word.epsilon()), membershipOracle);
+        LimitedBehaviorGraph<I> behaviorGraphUpInitial = learnBehaviorGraphUpTo(stratifiedObservationTable.getLevelLimit());
+        descriptions = behaviorGraphUpInitial.getPeriodicDescriptions();
+        descriptionIterator = descriptions.iterator();
     }
 
     @Override
@@ -71,7 +74,7 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
         LimitedBehaviorGraph<I> behaviorGraphUpToT = learnBehaviorGraphUpTo(stratifiedObservationTable.getLevelLimit());
         descriptions = behaviorGraphUpToT.getPeriodicDescriptions();
         descriptionIterator = descriptions.iterator();
-        return false;
+        return prefixes.size() != 0 || suffixes.size() != 0;
     }
 
     /**

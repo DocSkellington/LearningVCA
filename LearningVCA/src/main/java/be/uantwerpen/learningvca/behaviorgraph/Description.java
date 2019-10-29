@@ -201,4 +201,21 @@ public class Description<I extends Comparable<I>> {
 
         return vca;
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("Offset: " + getOffset() + "\n");
+        builder.append("Period: " + getPeriod() + "\n");
+        if (tauMappings.size() == 0) {
+            builder.append("Empty description");
+        }
+        else {
+            for (int i = 0 ; i < tauMappings.size() ; i++) {
+                builder.append("Tau mapping number " + i + ":\n");
+                builder.append(tauMappings.get(i));
+            }
+        }
+        return builder.toString();
+    }
 }

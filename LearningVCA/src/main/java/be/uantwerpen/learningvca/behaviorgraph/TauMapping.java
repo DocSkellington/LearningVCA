@@ -121,4 +121,18 @@ public class TauMapping<I extends Comparable<I>> {
 
         return mapping.getOrDefault(new KeyMapping(start, input), -1);
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        if (mapping.size() == 0) {
+            builder.append("Empty mapping");
+        }
+        else {
+            for (var entry : mapping.entrySet()) {
+                builder.append(entry.getKey().index + " --" + entry.getKey().input + "--> " + entry.getValue() + "\n");
+            }
+        }
+        return builder.toString();
+    }
 }
