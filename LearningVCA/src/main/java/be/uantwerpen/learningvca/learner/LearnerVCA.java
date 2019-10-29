@@ -2,6 +2,7 @@ package be.uantwerpen.learningvca.learner;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -31,7 +32,7 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
     private final MembershipOracle<I, Boolean> membershipOracle;
     private final PartialEquivalenceOracle<I> partialEquivalenceOracle;
     private List<Description<I>> descriptions;
-    private int positionInDescriptions;
+    private Iterator<Description<I>> descriptionIterator;
     private final StratifiedObservationTable<I, Boolean> stratifiedObservationTable;
 
     public LearnerVCA(VPDAlphabet<I> alphabet, MembershipOracle<I, Boolean> membershipOracle,
@@ -69,7 +70,7 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
         // Learning the behavior graph up to t
         LimitedBehaviorGraph<I> behaviorGraphUpToT = learnBehaviorGraphUpTo(stratifiedObservationTable.getLevelLimit());
         descriptions = behaviorGraphUpToT.getPeriodicDescriptions();
-        positionInDescriptions = 0;
+        descriptionIterator = descriptions.iterator();
         return false;
     }
 
@@ -84,11 +85,12 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
      */
     @Override
     public VCA<I> getHypothesisModel() {
-        if (descriptions.size() == 0 || positionInDescriptions >= descriptions.size()) {
+        if (descriptions.size() == 0 || !descriptionIterator.hasNext()) {
             return null;
         }
 
-        VCA<I> hypothesis = descriptions.get(positionInDescriptions++).toVCA(alphabet);
+        Description<I> description = descriptionIterator.next();
+        VCA<I> hypothesis = description.toVCA(alphabet);
 
         return hypothesis;
     }

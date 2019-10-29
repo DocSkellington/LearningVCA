@@ -9,13 +9,13 @@ import be.uantwerpen.learningvca.behaviorgraph.TauMapping;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
 import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
+import be.uantwerpen.learningvca.util.ComputeCounterValue;
 import be.uantwerpen.learningvca.vca.State;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.oracle.membership.SimulatorOracle;
 import net.automatalib.words.VPDAlphabet;
-import net.automatalib.words.Word;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
 /**
@@ -60,7 +60,7 @@ public class LearningVCA {
                     break;
                 }
 
-                if (getHeight(word.getInput(), alphabet) > learner.getObservationTableLevelLimit()) {
+                if (ComputeCounterValue.computeHeight(word.getInput(), alphabet) > learner.getObservationTableLevelLimit()) {
                     counterexample = word;
                 }
             }
@@ -123,20 +123,5 @@ public class LearningVCA {
         
         BehaviorGraph<Character> bg = new BehaviorGraph<>(alphabet, description);
         return bg;
-    }
-
-    private static int getHeight(Word<Character> word, VPDAlphabet<Character> alphabet) {
-        int height = 0;
-        int counterValue = 0;
-        for (Character c : word) {
-            if (alphabet.isCallSymbol(c)) {
-                counterValue++;
-                height = Math.max(height, counterValue);
-            }
-            else if (alphabet.isReturnSymbol(c)) {
-                counterValue--;
-            }
-        }
-        return height;
     }
 }

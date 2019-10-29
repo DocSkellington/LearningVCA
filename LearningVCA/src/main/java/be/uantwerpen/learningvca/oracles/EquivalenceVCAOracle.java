@@ -5,6 +5,7 @@ import java.util.Collection;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.EquivalenceOracle;
 import de.learnlib.api.query.DefaultQuery;
+import de.learnlib.oracle.equivalence.vpda.SimulatorEQOracle;
 
 /**
  * Equivalence query between two VCAs
@@ -12,16 +13,15 @@ import de.learnlib.api.query.DefaultQuery;
  * @author Gaëtan Staquet
  */
 public class EquivalenceVCAOracle<I> implements EquivalenceOracle<VCA<I>, I, Boolean> {
-    private VCA<I> sul;
+    private final SimulatorEQOracle<I> vpdaOracle;
 
     public EquivalenceVCAOracle(VCA<I> sul) {
-        this.sul = sul;
+        this.vpdaOracle = new SimulatorEQOracle<>(sul.toVPDA(), sul.getAlphabet());
     }
 
     @Override
     public DefaultQuery<I, Boolean> findCounterExample(VCA<I> hypothesis, Collection<? extends I> inputs) {
-        // TODO Auto-generated method stub
-        return null;
+        return vpdaOracle.findCounterExample(hypothesis.toVPDA(), inputs);
     }
 
 }

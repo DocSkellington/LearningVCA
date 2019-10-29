@@ -88,6 +88,7 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
                 } else {
                     qi = limitedBehaviorGraph.addState(cellContents(shortPrefixRow, 0));
                 }
+                limitedBehaviorGraph.setStateLevel(qi, level);
                 rowToState.put(shortPrefixRow, qi);
             }
         }
