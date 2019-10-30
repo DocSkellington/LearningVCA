@@ -33,18 +33,21 @@ public class State {
      */
     private final int m;
 
+    private final int id;
+
     /**
      * Constructs the state
      * @param alphabet The pushdown alphabet
      * @param m The m in m-VCA
      * @param isAccepting Whether this state is accepting
      */
-    public State(VPDAlphabet<?> alphabet, int m, boolean isAccepting) {
+    public State(VPDAlphabet<?> alphabet, int m, boolean isAccepting, int id) {
         this.m = m;
         this.callTransitions = new ArrayList<>(m + 1);
         this.returnTransitions = new ArrayList<>(m + 1);
         this.internalTransitions = new ArrayList<>(m + 1);
         this.isAccepting = isAccepting;
+        this.id = id;
 
         // By default, everything leads to the sink state (that is, everything is null)
         for (int i = 0 ; i <= m ; i++) {
@@ -73,7 +76,7 @@ public class State {
      * Gets the successor of this state when reading the given call symbol with the given counter value.
      * @param callSymbolId The id of the call symbol in the alphabet
      * @param counterValue The counter value
-     * @return The successor
+     * @return The successor, or null
      */
     public State getCallSuccessor(int callSymbolId, int counterValue) {
         int whichFunction = counterValue < m ? counterValue : m;
@@ -97,7 +100,7 @@ public class State {
      * Gets the successor of this state when reading the given return symbol with the given counter value.
      * @param returnSymbolId The id of the return symbol in the alphabet
      * @param counterValue The counter value
-     * @return The successor
+     * @return The successor, or null
      */
     public State getReturnSuccessor(int returnSymbolId, int counterValue) {
         int whichFunction = counterValue < m ? counterValue : m;
@@ -121,11 +124,12 @@ public class State {
      * Gets the successor of this state when reading the given internal symbol with the given counter value.
      * @param internalSymbolId The id of the internal symbol in the alphabet
      * @param counterValue The counter value
-     * @return The successor
+     * @return The successor, or null
      */
     public State getInternalSuccessor(int internalSymbolId, int counterValue) {
         int whichFunction = counterValue < m ? counterValue : m;
-        return internalTransitions.get(whichFunction).get(internalSymbolId);
+        ArrayStorage<State> delta = internalTransitions.get(whichFunction);
+        return delta.get(internalSymbolId);
     }
 
     /**
@@ -139,5 +143,12 @@ public class State {
             throw new IllegalArgumentException("Invalid function index for a internal successor for a state. Received " + functionIndex + " but the limit is " + m);
         }
         internalTransitions.get(functionIndex).set(internalSymbolId, successor);
+    }
+
+    /**
+     * @return The id
+     */
+    public int getId() {
+        return id;
     }
 }

@@ -2,8 +2,10 @@ package be.uantwerpen.learningvca.vca;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -11,7 +13,10 @@ import com.google.common.collect.Iterables;
 
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.automata.vpda.DefaultOneSEVPA;
+import net.automatalib.graphs.Graph;
 import net.automatalib.ts.acceptors.DeterministicAcceptorTS;
+import net.automatalib.visualization.DefaultVisualizationHelper;
+import net.automatalib.visualization.VisualizationHelper;
 import net.automatalib.words.VPDAlphabet;
 
 /**
@@ -22,7 +27,19 @@ import net.automatalib.words.VPDAlphabet;
  * @param <I> Input alphabet type
  * @author Gaëtan Staquet
  */
-public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>, SuffixOutput<I, Boolean> {
+public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>, SuffixOutput<I, Boolean>, Graph<State, VCA.VCAViewEdge<State, I>>  {
+    static class VCAViewEdge<S, I> {
+        private final I input;
+        private final int counterValue;
+        private final S target;
+
+        VCAViewEdge(I input, int counterValue, S target) {
+            this.input = input;
+            this.counterValue = counterValue;
+            this.target = target;
+        }
+    }
+
     protected final VPDAlphabet<I> alphabet;
     private final List<State> states;
     private State initialState;
@@ -102,7 +119,7 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
      * @return The state
      */
     public State addState(boolean accepting) {
-        State state = new State(getAlphabet(), m, accepting);
+        State state = new State(getAlphabet(), m, accepting, states.size());
         states.add(state);
         return state;
     }
@@ -225,5 +242,75 @@ public class VCA<I> implements DeterministicAcceptorTS<Configuration<State>, I>,
     public Boolean computeSuffixOutput(Iterable<? extends I> prefix, Iterable<? extends I> suffix) {
         Configuration<State> state =  getState(Iterables.concat(prefix, suffix));
         return state != null && isAccepting(state);
+    }
+
+    @Override
+    public Collection<VCAViewEdge<State, I>> getOutgoingEdges(State startingState) {
+        List<VCAViewEdge<State, I>> result = new ArrayList<>();
+
+        for (int counterValue = 0 ; counterValue <= m ; counterValue++) {
+            for (I symbol : alphabet) {
+                State successor = null;
+                switch (alphabet.getSymbolType(symbol)) {
+                    case CALL:
+                        successor = startingState.getCallSuccessor(alphabet.getCallSymbolIndex(symbol), counterValue);
+                        break;
+                    case RETURN:
+                        successor = startingState.getReturnSuccessor(alphabet.getReturnSymbolIndex(symbol), counterValue);
+                        break;
+                    case INTERNAL:
+                        successor = startingState.getInternalSuccessor(alphabet.getInternalSymbolIndex(symbol), counterValue);
+                        break;
+                    default:
+                        break;
+                }
+
+                if (successor != null) {
+                    result.add(new VCAViewEdge<>(symbol, counterValue, successor));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    public State getTarget(VCAViewEdge<State, I> edge) {
+        return edge.target;
+    }
+
+    @Override
+    public Collection<State> getNodes() {
+        return Collections.unmodifiableCollection(states);
+    }
+
+    @Override
+    public VisualizationHelper<State, VCAViewEdge<State, I>> getVisualizationHelper() {
+        return new DefaultVisualizationHelper<State, VCAViewEdge<State, I>>() {
+            @Override
+            protected Collection<State> initialNodes() {
+                return Collections.singleton(getInitialLocation());
+            }
+
+            @Override
+            public boolean getNodeProperties(State node, Map<String, String> properties) {
+                super.getNodeProperties(node, properties);
+
+                properties.put(NodeAttrs.SHAPE, node.isAccepting() ? NodeShapes.DOUBLECIRCLE : NodeShapes.CIRCLE);
+                properties.put(NodeAttrs.LABEL, "q" + node.getId());
+
+                return true;
+            }
+
+            @Override
+            public boolean getEdgeProperties(State src, VCAViewEdge<State, I> edge, State tgt,
+                    Map<String, String> properties) {
+                final I input = edge.input;
+                final int counterValue = edge.counterValue;
+
+                properties.put(EdgeAttrs.LABEL, input + ", " + counterValue);
+                return true;
+            }
+        };
     }
 }

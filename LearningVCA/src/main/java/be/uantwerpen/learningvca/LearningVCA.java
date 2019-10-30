@@ -1,6 +1,9 @@
 package be.uantwerpen.learningvca;
 
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import be.uantwerpen.learningvca.behaviorgraph.BehaviorGraph;
@@ -15,11 +18,13 @@ import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.oracle.membership.SimulatorOracle;
+import net.automatalib.serialization.dot.GraphDOT;
 import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
 /**
  * The main class
+ * 
  * @author Gaëtan Staquet
  */
 public class LearningVCA {
@@ -27,7 +32,7 @@ public class LearningVCA {
 
     }
 
-    public static void main( String[] args ) {
+    public static void main(String[] args) {
         VCA<Character> sul = getSUL();
         VPDAlphabet<Character> alphabet = sul.getAlphabet();
         BehaviorGraph<Character> behaviorGraph = getBG(alphabet);
@@ -79,7 +84,7 @@ public class LearningVCA {
      * @return A 1-VCA
      */
     private static VCA<Character> getSUL() {
-        List<Character> internalSymbols = Arrays.asList();
+        List<Character> internalSymbols = Collections.emptyList();
         List<Character> callSymbols = Arrays.asList('a');
         List<Character> returnSymbols = Arrays.asList('b');
 
@@ -90,7 +95,7 @@ public class LearningVCA {
         State q1 = vca.addState(true);
 
         vca.setCallSuccessor(q0, 0, 'a', q0);
-        vca.setCallSuccessor(q0, 1, 'a', q1);
+        vca.setCallSuccessor(q0, 1, 'a', q0);
         vca.setReturnSuccessor(q0, 1, 'b', q1);
         vca.setReturnSuccessor(q1, 1, 'b', q1);
 
