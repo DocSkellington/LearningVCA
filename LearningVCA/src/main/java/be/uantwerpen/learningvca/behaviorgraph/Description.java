@@ -125,16 +125,68 @@ public class Description<I extends Comparable<I>> {
     }
 
     /**
+     * Constructs a m-VCA from a description that has no period.
+     * @param alphabet The input alphabet of the VCA
+     * @return
+     */
+    private VCA<I> toVCANoPeriod(VPDAlphabet<I> alphabet) {
+        VCA<I> vca = new VCA<>(alphabet, m);
+        // We create Q
+        ArrayList<State> states = new ArrayList<>(K);
+        for (int i = 1 ; i <= K ; i++) {
+            states.add(vca.addState());
+        }
+
+        // q_0
+        vca.setInitialState(states.get(initialState.getEquivalenceClass() - 1));
+
+        // F
+        acceptingStates.stream().
+            map(state -> states.get(state.getEquivalenceClass() - 1)).
+            forEach(state -> state.setIsAccepting(true))
+        ;
+
+        // delta
+        for (int i = 1 ; i <= K ; i++) {
+            for (I symbol : alphabet) {
+                State start = states.get(i - 1);
+                // For every transition function
+                for (int j = 0 ; j < m ; j++) {
+                    int tau = tauMappings.get(j).getTransition(i, symbol);
+                    if (tau == -1) {
+                        continue;
+                    }
+                    if (alphabet.isCallSymbol(symbol)) {
+                        vca.setCallSuccessor(start, j, symbol, states.get(tau - 1));
+                    }
+                    else if (alphabet.isReturnSymbol(symbol)) {
+                        vca.setReturnSuccessor(start, j, symbol, states.get(tau - 1));
+                    }
+                    else {
+                        vca.setInternalSuccessor(start, j, symbol, states.get(tau - 1));
+                    }
+                }
+            }
+        }
+
+        return vca;
+    }
+
+    /**
      * Constructs a m-VCA accepting the same language as the behavior graph described.
+     * @param alphabet The input alphabet of the VCA
      * @return A m-VCA
      */
     public VCA<I> toVCA(VPDAlphabet<I> alphabet) {
+        if (getPeriod() == 0) {
+            return toVCANoPeriod(alphabet);
+        }
+
         // See definition 2.1
         VCA<I> vca = new VCA<>(alphabet, m);
 
-        ArrayList<ArrayList<State>> states = new ArrayList<>(K);
-
         // We create Q
+        ArrayList<ArrayList<State>> states = new ArrayList<>(K);
         for (int i = 1 ; i <= K ; i++) {
             ArrayList<State> s = new ArrayList<>(k);
             for (int j = 0 ; j <= k - 1 ; j++) {

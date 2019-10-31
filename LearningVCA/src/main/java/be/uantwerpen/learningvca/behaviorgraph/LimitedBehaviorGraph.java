@@ -1,11 +1,13 @@
 package be.uantwerpen.learningvca.behaviorgraph;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.annotation.Nullable;
@@ -66,53 +68,92 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
     }
 
     /**
-     * Constructs every possible periodic description of this behavior graph
-     * @return A list with every periodic description
+     * Create a non-periodic description of the level 0.
+     * 
+     * It only makes sense to call this function when there is no call symbol.
+     * @param width The width of the behavior graph
+     * @return The non-periodic description
      */
-    public List<Description<I>> getPeriodicDescriptions() {
-        int width = getWidth();
-        List<Description<I>> descriptions = new ArrayList<>();
-        for (int m = 0 ; m - 1 <= threshold ; m++) {
-            // TODO what happens when there are just internal symbols?
-            for (int k = 1 ; m + 2 * k - 1 <= threshold ; k++) {
-                int limit = m + k - 1;
-                // First, we create the nu mappings
-                List<Map<Integer, Integer>> nu_mappings = new ArrayList<>(m + k);
-                for (int i = 0 ; i <= limit ; i++) {
-                    nu_mappings.add(new HashMap<>());
-                }
-
-                IntStream.range(0, limit + 1).
-                    forEach(level -> {
-                        Map<Integer, Integer> nu_i = nu_mappings.get(level);
-                        getStates(level).stream().
-                            forEach(state -> nu_i.put(state, nu_i.size() + 1)
-                        );
+    private Description<I> getNonperiodicDescription(int width) {
+        // First, we create the nu mapping of the level 0
+        Map<Integer, Integer> nu_mapping = new HashMap<>();
+        getStates(0).stream().forEach(state -> nu_mapping.put(state, nu_mapping.size() + 1));
+        
+        // Then, we create the unique tau mapping
+        TauMapping<I> tauMapping = new TauMapping<>(width);
+        getStates(0).stream().
+            forEach(state -> {
+                getInputAlphabet().stream().forEach(symbol -> {
+                    Integer targetState = getTransition(state, symbol);
+                    if (targetState != null) {
+                        int startClass = nu_mapping.get(state);
+                        int targetClass = nu_mapping.get(targetState);
+                        tauMapping.addTransition(startClass, symbol, targetClass);
                     }
-                );
+                });
+            })
+        ;
 
-                List<TauMapping<I>> tauMappings = new ArrayList<>(m + k);
-                IntStream.range(0, limit).
-                    forEach(i -> tauMappings.add(new TauMapping<>(width))
-                );
+        // Finally, we can create the description
+        Description<I> description = new Description<>(1, 0, width);
+        description.addTauMappings(Arrays.asList(tauMapping));
+        getStates(0).stream().
+            filter(state -> isAccepting(state)).        // We keep only the accepting states
+            mapToInt(state -> nu_mapping.get(state)).   // We get the equivalence class number for each state
+            forEach(equivalenceClass -> description.addAcceptingState(0, equivalenceClass))
+        ;
+        description.setInitialState(0, nu_mapping.get(getInitialState()));
+        return description;
+    }
 
-                // We create the tau mappings up to m + k - 2
-                IntStream.range(0, limit).
-                    forEach(level -> {
-                        for (Integer startState : getStates(level)) {
-                            TauMapping<I> tauMapping = tauMappings.get(level);
-                            for (I symbol : getInputAlphabet()) {
-                                Integer targetState = getTransition(startState, symbol);
-                                if (targetState != null) {
-                                    int targetLevel = getLevel(targetState);
-                                    int startClass = nu_mappings.get(level).get(startState);
-                                    int targetClass = nu_mappings.get(targetLevel).get(targetState);
-                                    tauMapping.addTransition(startClass, symbol, targetClass);
-                                }
+    /**
+     * Gets every possible periodic description with a period and the given offset
+     * @param m The offset of the description to build
+     * @param width The width of the behavior graph
+     * @return A list with every description
+     */
+    private List<Description<I>> getPeriodicDescriptionsWithPeriod(int m, int width) {
+        List<Description<I>> descriptions = new ArrayList<>();
+        for (int k = 1 ; m + 2 * k - 1 <= threshold ; k++) {
+            int limit = m + k - 1;
+            // First, we create the nu mappings
+            List<Map<Integer, Integer>> nu_mappings = new ArrayList<>(m + k);
+            for (int i = 0 ; i <= limit ; i++) {
+                nu_mappings.add(new HashMap<>());
+            }
+
+            IntStream.range(0, limit + 1).
+                forEach(level -> {
+                    Map<Integer, Integer> nu_i = nu_mappings.get(level);
+                    getStates(level).stream().
+                        forEach(state -> nu_i.put(state, nu_i.size() + 1)
+                    );
+                }
+            );
+
+            List<TauMapping<I>> tauMappings = new ArrayList<>(m + k);
+            IntStream.range(0, limit).
+                forEach(i -> tauMappings.add(new TauMapping<>(width))
+            );
+
+            // We create the tau mappings up to m + k - 2
+            IntStream.range(0, limit).
+                forEach(level -> {
+                    for (Integer startState : getStates(level)) {
+                        TauMapping<I> tauMapping = tauMappings.get(level);
+                        for (I symbol : getInputAlphabet()) {
+                            Integer targetState = getTransition(startState, symbol);
+                            if (targetState != null) {
+                                int targetLevel = getLevel(targetState);
+                                int startClass = nu_mappings.get(level).get(startState);
+                                int targetClass = nu_mappings.get(targetLevel).get(targetState);
+                                tauMapping.addTransition(startClass, symbol, targetClass);
                             }
                         }
                     }
-                );
+                }
+            );
+            if (k > 0) {
                 // And we find the last tau mapping thanks to an isomorphism
                 TauMapping<I> lastTauMapping = getEndOfPeriod(m, k, width, nu_mappings);
                 if (lastTauMapping == null) {
@@ -120,20 +161,63 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
                     continue;
                 }
                 tauMappings.add(lastTauMapping);
-
-                Description<I> description = new Description<>(m, k, width);
-                description.addTauMappings(tauMappings);
-                int initialLevel = getLevel(getInitialState());
-                description.setInitialState(initialLevel, nu_mappings.get(initialLevel).get(getInitialState()));
-                descriptions.add(description);
             }
+
+            Description<I> description = new Description<>(m, k, width);
+            description.addTauMappings(tauMappings);
+            
+            IntStream.range(0, limit + 1).
+                forEach(level -> {
+                    getStates(level).stream().
+                        filter(state -> isAccepting(state)).
+                        mapToInt(state -> nu_mappings.get(level).get(state)).
+                        forEach(equivalenceClass -> description.addAcceptingState(level, equivalenceClass));
+                }
+            );
+
+            int initialLevel = getLevel(getInitialState());
+            nu_mappings.get(initialLevel);
+            description.setInitialState(initialLevel, nu_mappings.get(initialLevel).get(getInitialState()));
+            descriptions.add(description);
+        }
+        return descriptions;
+    }
+
+    /**
+     * Constructs every possible periodic description of this behavior graph
+     * @return A list with every periodic description
+     */
+    public List<Description<I>> getPeriodicDescriptions() {
+        int width = getWidth();
+        if (getInputAlphabet().getNumCalls() == 0) {
+            // If we don't have any call, the behavior graph has exactly one level
+            // So, we can not find a periodic description
+            // But, we can find a non-periodic description (just the level 0)
+            return Arrays.asList(getNonperiodicDescription(width));
+        }
+
+        List<Description<I>> descriptions = new ArrayList<>();
+        for (int m = 0 ; m - 1 <= threshold ; m++) {
+            descriptions.addAll(getPeriodicDescriptionsWithPeriod(m, width));
         }
 
         return descriptions;
     }
 
+    /**
+     * Constructs the last tau mapping in a periodic description
+     * @param m The offset of the description
+     * @param k The period of the description
+     * @param width The width of the behavior graph
+     * @param nu_mappings The nu mappings
+     * @return A tau mapping, or null if it is impossible to build such a mapping
+     */
     @Nullable
     private TauMapping<I> getEndOfPeriod(int m, int k, int width, List<Map<Integer, Integer>> nu_mappings) {
+        if (k == 0) {
+            return null;
+        }
+
         // We create the isomorphism
         BiMap<Integer, Integer> isomorphism = HashBiMap.create();
         List<Integer> freeStates = new ArrayList<>();
@@ -173,9 +257,10 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
 
     /**
      * Finds a isomorphism starting from [w]_O
-     * @param m
-     * @param k
+     * @param m The offset of the description
+     * @param k The period of the description
      * @param startingState [w]_O. It must not yet be in an isomorphism
+     * @param previousIsomorphism The isomorphism already built
      * @return The isomorphism
      */
     @Nullable
@@ -197,12 +282,12 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
 
         int targetLevel = m + k;
         VPDAlphabet<I> alphabet = getInputAlphabet();
+        // We consider only the states on level m + k that are not already in an isomorphism as hypothesis
+        List<Integer> statesToConsider = getStates(targetLevel).stream().
+            filter(state -> !previousIsomorphism.containsValue(state)).
+            collect(Collectors.toList());
 
-        for (int targetState : getStates(targetLevel)) {
-            if (previousIsomorphism.containsValue(targetState)) {
-                // We can not reuse an equivalence class
-                continue;
-            }
+        for (int targetState : statesToConsider) {
             BiMap<Integer, Integer> newIsomorphism = HashBiMap.create();
             // We suppose it's an isomorphism and we seek a counterexample
             boolean isIsomorphism = true;
@@ -210,7 +295,7 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
             queue.add(new InQueue(startingState, targetState));
             newIsomorphism.put(startingState, targetState);
 
-            InQueue current;
+            InQueue current = null;
             while ((current = queue.poll()) != null && isIsomorphism) {
                 int currentStateFirst = current.stateInFirst;
                 int currentLevelFirst = getLevel(currentStateFirst);
@@ -218,8 +303,11 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
                 int currentLevelSecond = getLevel(currentStateSecond);
 
                 for (I symbol : alphabet) {
-                    // We only keep the subgraph induced by the levels m to m + k - 1
-                    if ((alphabet.isCallSymbol(symbol) && currentLevelFirst == m + k - 1) || (alphabet.isReturnSymbol(symbol) && currentLevelFirst == m)) {
+                    // We only keep the subgraphs induced by the levels m to m + k - 1 and by the levels m + k to m + 2k - 1
+                    if (
+                        (alphabet.isCallSymbol(symbol) && (currentLevelFirst == m + k - 1 || currentLevelSecond == m + 2*k - 1)) ||
+                        (alphabet.isReturnSymbol(symbol) && (currentLevelFirst == m || currentLevelSecond == m + k))
+                    ) {
                         continue;
                     }
 
@@ -245,7 +333,6 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
                     int movementInSecond = newLevelSecond - currentLevelSecond;
 
                     if (movementInFirst != movementInSecond) {
-                        System.out.println("Different movements");
                         // The transitions do not lead to the "same" level
                         isIsomorphism = false;
                         break;
@@ -254,16 +341,22 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
                     // If one of the states is already in an isomorphism
                     // And if the values do not coincide, then we don't have an isomorphism
                     if (
-                        (newIsomorphism.containsKey(newStateFirst) && newIsomorphism.get(newStateFirst) != newStateSecond) ||
-                        (newIsomorphism.inverse().containsKey(newStateSecond) && newIsomorphism.inverse().get(newStateSecond) != newStateFirst) ||
-                        (previousIsomorphism.containsKey(newStateFirst) && previousIsomorphism.get(newStateFirst) != newStateSecond) ||
-                        (previousIsomorphism.inverse().containsKey(newStateSecond) && newIsomorphism.inverse().get(newStateSecond) != newStateFirst)
+                        (newIsomorphism.containsKey(newStateFirst) && !newIsomorphism.get(newStateFirst).equals(newStateSecond)) ||
+                        (newIsomorphism.inverse().containsKey(newStateSecond) && !newIsomorphism.inverse().get(newStateSecond).equals(newStateFirst)) ||
+                        (previousIsomorphism.containsKey(newStateFirst) && !previousIsomorphism.get(newStateFirst).equals(newStateSecond)) ||
+                        (previousIsomorphism.inverse().containsKey(newStateSecond) && !previousIsomorphism.inverse().get(newStateSecond).equals(newStateFirst))
                     ) {
                         isIsomorphism = false;
                         break;
                     }
 
-                    if (!queue.contains(new InQueue(newStateFirst, newStateSecond)) && !newIsomorphism.containsKey(newStateFirst) && !previousIsomorphism.containsKey(newStateFirst)) {
+                    if (
+                        !queue.contains(new InQueue(newStateFirst, newStateSecond)) &&
+                        !newIsomorphism.containsKey(newStateFirst) &&
+                        !newIsomorphism.inverse().containsKey(newStateSecond) &&
+                        !previousIsomorphism.containsKey(newStateFirst) &&
+                        !previousIsomorphism.inverse().containsKey(newStateSecond)
+                    ) {
                         // We don't add the new equivalence classes if they already have been explored or marked for exploration
                         newIsomorphism.put(newStateFirst, newStateSecond);
                         queue.add(new InQueue(newStateFirst, newStateSecond));
