@@ -39,7 +39,7 @@ public class LearningVCA {
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(sul);
         PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(behaviorGraph);
-        EquivalenceVCAOracle<Character>     equivalenceVCAOracle = new EquivalenceVCAOracle<>(sul);
+        EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(sul);
 
         LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
 
@@ -49,8 +49,7 @@ public class LearningVCA {
         do {
             if (counterexample == null) {
                 learner.startLearning();
-            }
-            else {
+            } else {
                 learner.refineHypothesis(counterexample);
             }
 
@@ -65,18 +64,24 @@ public class LearningVCA {
                     break;
                 }
 
-                if (ComputeCounterValue.computeHeight(word.getInput(), alphabet) > learner.getObservationTableLevelLimit()) {
+                if (ComputeCounterValue.computeHeight(word.getInput(), alphabet) > learner
+                        .getObservationTableLevelLimit()) {
                     counterexample = word;
                 }
             }
 
             if (counterexample == null && answer == null) {
                 // We didn't find a counter example nor an appropriate VCA
-                counterexample = equivalenceVCAOracle.findCounterExample(learner.getObservationTable().toVCA(), alphabet);
+                counterexample = equivalenceVCAOracle.findCounterExample(learner.getObservationTable().toVCA(),
+                        alphabet);
             }
         } while (counterexample != null);
 
-        // TODO write the final VCA in DOT format
+        try {
+            GraphDOT.write(answer, new FileWriter("output.dot"));
+        } catch (IOException e) {
+            System.out.println("Impossible to open the file 'output.dot' to write the DOT format of the VCA");
+        }
     }
 
     /**
