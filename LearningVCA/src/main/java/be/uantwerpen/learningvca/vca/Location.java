@@ -151,4 +151,32 @@ public class Location {
     public int getId() {
         return id;
     }
+
+    @Override
+    public String toString() {
+        return "q" + getId();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+
+        if (obj.getClass() != getClass()) {
+            return false;
+        }
+        Location other = (Location)obj;
+        return
+            this.isAccepting == other.isAccepting &&
+            this.id == other.id &&
+            this.m == other.m &&
+            this.callTransitions.equals(other.callTransitions) &&
+            this.returnTransitions.equals(other.returnTransitions) &&
+            this.internalTransitions.equals(other.internalTransitions)
+        ;
+    }
 }

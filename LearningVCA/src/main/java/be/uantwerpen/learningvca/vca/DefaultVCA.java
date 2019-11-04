@@ -1,8 +1,9 @@
 package be.uantwerpen.learningvca.vca;
 
-import java.security.InvalidParameterException;
 import java.util.LinkedList;
 import java.util.List;
+
+import javax.annotation.Nullable;
 
 import net.automatalib.words.VPDAlphabet;
 
@@ -105,7 +106,10 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
     }
 
     @Override
-    public Location getInternalSuccessor(Location loc, I symbol, int counterValue) {
+    public Location getInternalSuccessor(@Nullable Location loc, I symbol, int counterValue) {
+        if (loc == null) {
+            return null;
+        }
         return loc.getInternalSuccessor(getAlphabet().getInternalSymbolIndex(symbol), counterValue);
     }
 
@@ -121,7 +125,10 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
     }
 
     @Override
-    public Location getCallSuccessor(Location loc, I symbol, int counterValue) {
+    public Location getCallSuccessor(@Nullable Location loc, I symbol, int counterValue) {
+        if (loc == null) {
+            return null;
+        }
         return loc.getCallSuccessor(getAlphabet().getCallSymbolIndex(symbol), counterValue);
     }
 
@@ -137,22 +144,11 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
     }
 
     @Override
-    public Location getReturnSuccessor(Location loc, I symbol, int counterValue) {
-        return loc.getReturnSuccessor(getAlphabet().getReturnSymbolIndex(symbol), counterValue);
-    }
-
-    @Override
-    public Location getSuccessor(Location loc, I symbol, int counterValue) {
-        switch (getAlphabet().getSymbolType(symbol)) {
-            case CALL:
-                return getCallSuccessor(loc, symbol, counterValue);
-            case RETURN:
-                return getReturnSuccessor(loc, symbol, counterValue);
-            case INTERNAL:
-                return getInternalSuccessor(loc, symbol, counterValue);
-            default:
-                throw new InvalidParameterException("Unknown input symbol type. Received: "  + symbol + " but it is not in the alphabet.");
+    public Location getReturnSuccessor(@Nullable Location loc, I symbol, int counterValue) {
+        if (loc == null) {
+            return null;
         }
+        return loc.getReturnSuccessor(getAlphabet().getReturnSymbolIndex(symbol), counterValue);
     }
 
     @Override

@@ -2,10 +2,13 @@ package be.uantwerpen.learningvca.vca;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.stream.IntStream;
 
 import org.junit.Test;
@@ -15,14 +18,42 @@ import net.automatalib.words.Word;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
 public class DefaultVCATest {
-    @Test
-    public void testAcceptsEverything() {
+
+    private VCA<?, Character> getVCAAcceptingEverything() {
         VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList('a'), Collections.emptyList(), Collections.emptyList());
         DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 0);
         assertEquals(0, vca.getThreshold());
         Location q0 = vca.addInitialLocation(true);
         assertTrue(q0.isAccepting());
         vca.setInternalSuccessor(q0, 0, 'a', q0);
+        return vca;
+    }
+
+    private VCA<?, Character> getVCARejectingEverything() {
+        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList('a'), Collections.emptyList(), Collections.emptyList());
+        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 0);
+        assertEquals(0, vca.getThreshold());
+        Location q0 = vca.addInitialLocation(false);
+        assertFalse(q0.isAccepting());
+        vca.setInternalSuccessor(q0, 0, 'a', q0);
+        return vca;
+    }
+
+    private VCA<?, Character> getVCAExample() {
+        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList(), Arrays.asList('a'), Arrays.asList('b'));
+        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
+        Location q0 = vca.addInitialLocation(false);
+        Location q1 = vca.addLocation(true);
+        vca.setCallSuccessor(q0, 0, 'a', q0);
+        vca.setCallSuccessor(q0, 1, 'a', q1);
+        vca.setReturnSuccessor(q0, 1, 'b', q1);
+        vca.setReturnSuccessor(q1, 1, 'b', q1);
+        return vca;
+    }
+
+    @Test
+    public void testAcceptsEverything() {
+        VCA<?, Character> vca = getVCAAcceptingEverything();
 
         assertTrue(vca.accepts(Word.epsilon()));
         assertTrue(vca.computeOutput(Word.epsilon()));
@@ -44,12 +75,7 @@ public class DefaultVCATest {
 
     @Test
     public void testRejectEverything() {
-        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList('a'), Collections.emptyList(), Collections.emptyList());
-        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 0);
-        assertEquals(0, vca.getThreshold());
-        Location q0 = vca.addInitialLocation(false);
-        assertFalse(q0.isAccepting());
-        vca.setInternalSuccessor(q0, 0, 'a', q0);
+        VCA<?, Character> vca = getVCARejectingEverything();
 
         Word<Character> word = Word.fromString("aaaaaa");
         IntStream.range(0, word.size()).forEach(i -> {
@@ -67,27 +93,13 @@ public class DefaultVCATest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testNotInAlphabet() {
-        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList('a'), Collections.emptyList(), Collections.emptyList());
-        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 0);
-        assertEquals(0, vca.getThreshold());
-        Location q0 = vca.addInitialLocation(true);
-        assertTrue(q0.isAccepting());
-        vca.setInternalSuccessor(q0, 0, 'a', q0);
-
+        VCA<?, Character> vca = getVCAAcceptingEverything();
         vca.accepts(Word.fromString("b"));
     }
 
     @Test
     public void testExample() {
-        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList(), Arrays.asList('a'), Arrays.asList('b'));
-        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
-        Location q0 = vca.addInitialLocation(false);
-        Location q1 = vca.addLocation(true);
-        vca.setCallSuccessor(q0, 0, 'a', q0);
-        vca.setCallSuccessor(q0, 1, 'a', q1);
-        vca.setReturnSuccessor(q0, 1, 'b', q1);
-        vca.setReturnSuccessor(q1, 1, 'b', q1);
-
+        VCA<?, Character> vca = getVCAExample();
         Word<Character> word = Word.fromString("aabb");
         assertTrue(vca.accepts(word));
         IntStream.range(0, word.size() + 1).forEach(i -> {
@@ -112,5 +124,44 @@ public class DefaultVCATest {
             assertFalse(vca.computeSuffixOutput(suffix, suffix));
             assertTrue(vca.computeSuffixOutput(prefix, suffix));
         });
+    }
+
+    @Test
+    public void testGetAcceptingLocations() {
+        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList(), Arrays.asList('a'), Arrays.asList('b'));
+        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
+        Location q0 = vca.addInitialLocation(false);
+        Location q1 = vca.addLocation(true);
+        vca.setCallSuccessor(q0, 0, 'a', q0);
+        vca.setCallSuccessor(q0, 1, 'a', q1);
+        vca.setReturnSuccessor(q0, 1, 'b', q1);
+        vca.setReturnSuccessor(q1, 1, 'b', q1);
+
+        List<Location> locations = vca.getAcceptingLocations();
+        assertTrue(locations.get(0).equals(q1));
+        assertTrue(locations.contains(q1));
+    }
+
+    @Test
+    public void testGetAcceptedWordExample() {
+        VCA<?, Character> vca = getVCAExample();
+        Word<Character> word = vca.getAcceptedWord();
+        assertNotNull(word);
+        assertTrue(vca.accepts(word));
+    }
+
+    @Test
+    public void testGetAcceptedWordEverything() {
+        VCA<?, Character> vca = getVCAAcceptingEverything();
+        Word<Character> word = vca.getAcceptedWord();
+        assertNotNull(word);
+        assertTrue(vca.accepts(word));
+    }
+
+    @Test
+    public void testGetAcceptedWordNothing() {
+        VCA<?, Character> vca = getVCARejectingEverything();
+        Word<Character> word = vca.getAcceptedWord();
+        assertNull(word);
     }
 }

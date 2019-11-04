@@ -52,4 +52,46 @@ public class State<L> {
     public boolean isSink() {
         return location == null;
     }
+
+    @Override
+    public String toString() {
+        return "(" + getLocation().toString() + ", " + counter.toString() + ")";
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+
+        if (obj == this) {
+            return true;
+        }
+
+        if (obj.getClass() != getClass()) {
+            return false;
+        }
+
+        State<L> other = (State<L>)obj;
+        if (isSink() && other.isSink()) {
+            return true;
+        }
+
+        if (other.location == null && this.location == null) {
+            return false;
+        }
+        else if (other.location == null || this.location == null) {
+            return false;
+        }
+
+        if (other.counter == null && this.counter == null) {
+            return false;
+        }
+        else if (other.counter == null || this.counter == null) {
+            return false;
+        }
+
+        return this.location.equals(other.location) && this.counter.equals(other.counter);
+    }
 }

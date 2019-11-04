@@ -50,4 +50,30 @@ public class CounterValue {
     public boolean isZero() {
         return counter == 0;
     }
+
+    public boolean isValid() {
+        return counter >= 0;
+    }
+
+    @Override
+    public String toString() {
+        return "" + toInt();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+
+        if (obj.getClass() != getClass()) {
+            return false;
+        }
+
+        CounterValue other = (CounterValue)obj;
+        return other.counter == this.counter;
+    }
 }
