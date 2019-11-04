@@ -23,16 +23,16 @@ public interface StratifiedObservationTable<I extends Comparable<I>, D> extends 
      * @param level The level
      * @return The number of suffixes in the level
      */
-    public int numberOfSuffixes(int level);
+    int numberOfSuffixes(int level);
 
     /**
      * @param level The level
      * @return The suffixes in the level
      */
-    public List<Word<I>> getSuffixes(int level);
+    List<Word<I>> getSuffixes(int level);
 
     @Override
-    default public List<List<Row<I>>> addSuffixes(Collection<? extends Word<I>> newSuffixes, MembershipOracle<I, D> oracle) {
+    default List<List<Row<I>>> addSuffixes(Collection<? extends Word<I>> newSuffixes, MembershipOracle<I, D> oracle) {
         throw new UnsupportedOperationException("StratifiedObservationTable: you must specify the levels of the new suffixes");
     }
 
@@ -43,7 +43,7 @@ public interface StratifiedObservationTable<I extends Comparable<I>, D> extends 
      * @param oracle The membership oracle
      * @return A list of equivalence classes of unclosed rows
      */
-    default public List<List<Row<I>>> addSuffix(Word<I> suffix, int suffixLevel, MembershipOracle<I, D> oracle) {
+    default List<List<Row<I>>> addSuffix(Word<I> suffix, int suffixLevel, MembershipOracle<I, D> oracle) {
         return addSuffixes(Collections.singletonList(suffix), Collections.singletonList(suffixLevel), oracle);
     }
 
@@ -56,12 +56,12 @@ public interface StratifiedObservationTable<I extends Comparable<I>, D> extends 
      * @param oracle The membership oracle
      * @return A list of equivalence classes of unclosed rows
      */
-    public List<List<Row<I>>> addSuffixes(List<? extends Word<I>> newSuffixes, List<Integer> newSuffixesLevels, MembershipOracle<I, D> oracle);
+    List<List<Row<I>>> addSuffixes(List<? extends Word<I>> newSuffixes, List<Integer> newSuffixesLevels, MembershipOracle<I, D> oracle);
 
     /**
      * @return The current level limit (t)
      */
-    public int getLevelLimit();
+    int getLevelLimit();
 
     /**
      * Constructs a t-VCA from this table.
@@ -69,14 +69,14 @@ public interface StratifiedObservationTable<I extends Comparable<I>, D> extends 
      * If the table is not closed and consistent, the VCA might be ill-formed
      * @return The t-VCA
      */
-    public VCA<I> toVCA();
+    VCA<?, I> toVCA();
 
     /**
      * Constructs a behavior graph limited up to the maximum level of this table.
      * @return The limited behavior graph this table defines
      */
-    public LimitedBehaviorGraph<I> toLimitedBehaviorGraph();
+    LimitedBehaviorGraph<I> toLimitedBehaviorGraph();
 
     @Override
-    public StratifiedObservationRow<I> getRow(Word<I> word);
+    StratifiedObservationRow<I> getRow(Word<I> word);
 }

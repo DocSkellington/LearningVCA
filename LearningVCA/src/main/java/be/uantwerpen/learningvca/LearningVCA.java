@@ -13,7 +13,9 @@ import be.uantwerpen.learningvca.learner.LearnerVCA;
 import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
 import be.uantwerpen.learningvca.util.ComputeCounterValue;
-import be.uantwerpen.learningvca.vca.State;
+import be.uantwerpen.learningvca.vca.AbstractVCA;
+import be.uantwerpen.learningvca.vca.DefaultVCA;
+import be.uantwerpen.learningvca.vca.Location;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
@@ -33,7 +35,7 @@ public class LearningVCA {
     }
 
     public static void main(String[] args) {
-        VCA<Character> sul = getSUL();
+        VCA<?, Character> sul = getSUL();
         VPDAlphabet<Character> alphabet = sul.getAlphabet();
         BehaviorGraph<Character> behaviorGraph = getBG(alphabet);
 
@@ -44,7 +46,7 @@ public class LearningVCA {
         LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
 
         DefaultQuery<Character, Boolean> counterexample = null;
-        VCA<Character> answer = null;
+        VCA<?, Character> answer = null;
 
         do {
             if (counterexample == null) {
@@ -53,7 +55,7 @@ public class LearningVCA {
                 learner.refineHypothesis(counterexample);
             }
 
-            VCA<Character> hypothesis;
+            VCA<?, Character> hypothesis;
             // We test every possible description of BG_O
             while ((hypothesis = learner.getHypothesisModel()) != null) {
                 DefaultQuery<Character, Boolean> word = equivalenceVCAOracle.findCounterExample(hypothesis, alphabet);
@@ -78,7 +80,7 @@ public class LearningVCA {
         } while (counterexample != null);
 
         try {
-            GraphDOT.write(answer, new FileWriter("output.dot"));
+            GraphDOT.write((AbstractVCA<?, Character>)answer, new FileWriter("output.dot"));
         } catch (IOException e) {
             System.out.println("Impossible to open the file 'output.dot' to write the DOT format of the VCA");
         }
@@ -88,16 +90,16 @@ public class LearningVCA {
      * Constructs a simple 1-VCA for L = {a^n b^n | n is a natural and n is not zero}
      * @return A 1-VCA
      */
-    private static VCA<Character> getSUL() {
+    private static VCA<?, Character> getSUL() {
         List<Character> internalSymbols = Collections.emptyList();
         List<Character> callSymbols = Arrays.asList('a');
         List<Character> returnSymbols = Arrays.asList('b');
 
         VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<Character>(internalSymbols, callSymbols, returnSymbols);
-        VCA<Character> vca = new VCA<>(alphabet, 1);
+        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
 
-        State q0 = vca.addInitialState(true);
-        State q1 = vca.addState(true);
+        Location q0 = vca.addInitialLocation(true);
+        Location q1 = vca.addLocation(true);
 
         vca.setCallSuccessor(q0, 0, 'a', q0);
         vca.setCallSuccessor(q0, 1, 'a', q0);

@@ -53,7 +53,7 @@ public class LimitedBehaviorGraphTest {
         List<Description<Character>> descriptions = behaviorGraph.getPeriodicDescriptions();
         assertNotNull(descriptions);
         assertEquals(1, descriptions.size());
-        VCA<Character> vca = descriptions.get(0).toVCA(getRegularAlphabet());
+        VCA<?, Character> vca = descriptions.get(0).toVCA(getRegularAlphabet());
         assertTrue(vca.accepts(Word.fromString("aaabb")));
         assertTrue(vca.accepts(Word.fromString("ab")));
         assertTrue(vca.accepts(Word.fromString("aaaaaaaaabbbbb")));
@@ -166,7 +166,7 @@ public class LimitedBehaviorGraphTest {
         assertEquals(0, desc.getOffset());
         assertEquals(1, desc.getPeriod());
         assertEquals(1, desc.getTauMappings().size());
-        VCA<Character> vca = desc.toVCA(getAlphabetWithoutInternals());
+        VCA<?, Character> vca = desc.toVCA(getAlphabetWithoutInternals());
         assertFalse(vca.accepts(Word.fromString("ab")));
 
         behaviorGraph = getWithoutInternals(3);
@@ -354,7 +354,7 @@ public class LimitedBehaviorGraphTest {
         assertNotNull(descriptions.size());
         assertEquals(1, descriptions.size());
         // The description is correct up to level 1
-        VCA<Character> vca = descriptions.get(0).toVCA(getAlphabetWithInternals());
+        VCA<?, Character> vca = descriptions.get(0).toVCA(getAlphabetWithInternals());
         assertFalse(vca.accepts(Word.epsilon()));
         assertTrue(vca.accepts(Word.fromString("acb")));
         assertTrue(vca.accepts(Word.fromString("acccccb")));

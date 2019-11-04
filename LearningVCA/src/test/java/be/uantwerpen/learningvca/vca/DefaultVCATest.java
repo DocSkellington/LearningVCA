@@ -14,13 +14,13 @@ import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
-public class VCATest {
+public class DefaultVCATest {
     @Test
     public void testAcceptsEverything() {
         VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList('a'), Collections.emptyList(), Collections.emptyList());
-        VCA<Character> vca = new VCA<>(alphabet, 0);
+        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 0);
         assertEquals(0, vca.getThreshold());
-        State q0 = vca.addInitialState(true);
+        Location q0 = vca.addInitialLocation(true);
         assertTrue(q0.isAccepting());
         vca.setInternalSuccessor(q0, 0, 'a', q0);
 
@@ -45,9 +45,9 @@ public class VCATest {
     @Test
     public void testRejectEverything() {
         VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList('a'), Collections.emptyList(), Collections.emptyList());
-        VCA<Character> vca = new VCA<>(alphabet, 0);
+        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 0);
         assertEquals(0, vca.getThreshold());
-        State q0 = vca.addInitialState(false);
+        Location q0 = vca.addInitialLocation(false);
         assertFalse(q0.isAccepting());
         vca.setInternalSuccessor(q0, 0, 'a', q0);
 
@@ -68,9 +68,9 @@ public class VCATest {
     @Test(expected = IllegalArgumentException.class)
     public void testNotInAlphabet() {
         VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList('a'), Collections.emptyList(), Collections.emptyList());
-        VCA<Character> vca = new VCA<>(alphabet, 0);
+        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 0);
         assertEquals(0, vca.getThreshold());
-        State q0 = vca.addInitialState(true);
+        Location q0 = vca.addInitialLocation(true);
         assertTrue(q0.isAccepting());
         vca.setInternalSuccessor(q0, 0, 'a', q0);
 
@@ -80,9 +80,9 @@ public class VCATest {
     @Test
     public void testExample() {
         VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList(), Arrays.asList('a'), Arrays.asList('b'));
-        VCA<Character> vca = new VCA<>(alphabet, 1);
-        State q0 = vca.addInitialState(false);
-        State q1 = vca.addState(true);
+        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
+        Location q0 = vca.addInitialLocation(false);
+        Location q1 = vca.addLocation(true);
         vca.setCallSuccessor(q0, 0, 'a', q0);
         vca.setCallSuccessor(q0, 1, 'a', q1);
         vca.setReturnSuccessor(q0, 1, 'b', q1);

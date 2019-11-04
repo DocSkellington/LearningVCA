@@ -27,7 +27,7 @@ import net.automatalib.words.Word;
  * @param <I>
  * @author Gaëtan Staquet
  */
-public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I, Boolean> {
+public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<?, I>, I, Boolean> {
     private final VPDAlphabet<I> alphabet;
     private final MembershipOracle<I, Boolean> membershipOracle;
     private final PartialEquivalenceOracle<I> partialEquivalenceOracle;
@@ -87,13 +87,13 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<I>, I,
      * @return A VCA or null if there is no next hypothesis model
      */
     @Override
-    public VCA<I> getHypothesisModel() {
+    public VCA<?, I> getHypothesisModel() {
         if (descriptions.size() == 0 || !descriptionIterator.hasNext()) {
             return null;
         }
 
         Description<I> description = descriptionIterator.next();
-        VCA<I> hypothesis = description.toVCA(alphabet);
+        VCA<?, I> hypothesis = description.toVCA(alphabet);
 
         return hypothesis;
     }

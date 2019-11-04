@@ -5,7 +5,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import be.uantwerpen.learningvca.vca.State;
+import be.uantwerpen.learningvca.vca.DefaultVCA;
+import be.uantwerpen.learningvca.vca.Location;
 import be.uantwerpen.learningvca.vca.VCA;
 import net.automatalib.words.VPDAlphabet;
 
@@ -129,16 +130,16 @@ public class Description<I extends Comparable<I>> {
      * @param alphabet The input alphabet of the VCA
      * @return
      */
-    private VCA<I> toVCANoPeriod(VPDAlphabet<I> alphabet) {
-        VCA<I> vca = new VCA<>(alphabet, m);
+    private VCA<?, I> toVCANoPeriod(VPDAlphabet<I> alphabet) {
+        DefaultVCA<I> vca = new DefaultVCA<>(alphabet, m);
         // We create Q
-        ArrayList<State> states = new ArrayList<>(K);
+        ArrayList<Location> states = new ArrayList<>(K);
         for (int i = 1 ; i <= K ; i++) {
-            states.add(vca.addState());
+            states.add(vca.addLocation());
         }
 
         // q_0
-        vca.setInitialState(states.get(initialState.getEquivalenceClass() - 1));
+        vca.setInitialLocation(states.get(initialState.getEquivalenceClass() - 1));
 
         // F
         acceptingStates.stream().
@@ -149,7 +150,7 @@ public class Description<I extends Comparable<I>> {
         // delta
         for (int i = 1 ; i <= K ; i++) {
             for (I symbol : alphabet) {
-                State start = states.get(i - 1);
+                Location start = states.get(i - 1);
                 // For every transition function
                 for (int j = 0 ; j < m ; j++) {
                     int tau = tauMappings.get(j).getTransition(i, symbol);
@@ -177,26 +178,26 @@ public class Description<I extends Comparable<I>> {
      * @param alphabet The input alphabet of the VCA
      * @return A m-VCA
      */
-    public VCA<I> toVCA(VPDAlphabet<I> alphabet) {
+    public VCA<?, I> toVCA(VPDAlphabet<I> alphabet) {
         if (getPeriod() == 0) {
             return toVCANoPeriod(alphabet);
         }
 
         // See definition 2.1
-        VCA<I> vca = new VCA<>(alphabet, m);
+        DefaultVCA<I> vca = new DefaultVCA<>(alphabet, m);
 
         // We create Q
-        ArrayList<ArrayList<State>> states = new ArrayList<>(K);
+        ArrayList<ArrayList<Location>> states = new ArrayList<>(K);
         for (int i = 1 ; i <= K ; i++) {
-            ArrayList<State> s = new ArrayList<>(k);
+            ArrayList<Location> s = new ArrayList<>(k);
             for (int j = 0 ; j <= k - 1 ; j++) {
-                s.add(vca.addState());
+                s.add(vca.addLocation());
             }
             states.add(s);
         }
 
         // q_0
-        vca.setInitialState(states.get(initialState.getEquivalenceClass() - 1).get(k - 1));
+        vca.setInitialLocation(states.get(initialState.getEquivalenceClass() - 1).get(k - 1));
 
         // We set F
         for (StateBG stateBG : acceptingStates) {
@@ -209,7 +210,7 @@ public class Description<I extends Comparable<I>> {
         for (int i = 1 ; i <= K ; i++) {
             for (int r = 0 ; r <= k - 1 ; r++) {
                 for (I a : alphabet) {
-                    State start = states.get(i - 1).get(r);
+                    Location start = states.get(i - 1).get(r);
                     // Every transition function except delta_m
                     for (int j = 0 ; j <= m - 1 ; j++) {
                         int tau = tauMappings.get(j).getTransition(i, a);

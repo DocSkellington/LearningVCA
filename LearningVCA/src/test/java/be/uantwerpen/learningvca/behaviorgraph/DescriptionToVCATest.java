@@ -4,32 +4,24 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import org.junit.Test;
 
-import be.uantwerpen.learningvca.vca.State;
 import be.uantwerpen.learningvca.vca.VCA;
-import net.automatalib.serialization.dot.GraphDOT;
 import net.automatalib.words.Word;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
 public class DescriptionToVCATest {
+
     @Test
     public void descriptionToVCA() {
         Description<Character> description = ConstructBG.constructDescription();
 
-        VCA<Character> vca = description.toVCA(ConstructBG.getAlphabet());
+        VCA<?, Character> vca = description.toVCA(ConstructBG.getAlphabet());
 
         assertEquals(2, vca.size());
-
-        List<State> states = vca.getStates();
-        assertTrue(states.get(0).isAccepting());
-        assertTrue(states.get(1).isAccepting());
 
         assertTrue(vca.accepts(Arrays.asList()));
         assertTrue(vca.accepts(Arrays.asList('a', 'b')));
@@ -45,7 +37,7 @@ public class DescriptionToVCATest {
 
     // This test comes from a description from the execution
     @Test
-    public void exampleFromExecution() throws IOException {
+    public void exampleFromExecution() {
         TauMapping<Character> t0 = new TauMapping<>(3);
         t0.addTransition(1, 'a', 1);
         t0.addTransition(2, 'a', 2);
@@ -73,9 +65,8 @@ public class DescriptionToVCATest {
         description.addAcceptingState(0, 1);
         description.addAcceptingState(0, 2);
 
-        VCA<Character> vca = description.toVCA(new DefaultVPDAlphabet<>(Collections.emptyList(), Arrays.asList('a'), Arrays.asList('b')));
+        VCA<?, Character> vca = description.toVCA(new DefaultVPDAlphabet<>(Collections.emptyList(), Arrays.asList('a'), Arrays.asList('b')));
 
-        GraphDOT.write(vca, new FileWriter("test.dot"));
         assertTrue(vca.accepts(Word.epsilon()));
         for (int i = 1 ; i <= 100 ; i++) {
             StringBuilder builder = new StringBuilder();
@@ -126,7 +117,7 @@ public class DescriptionToVCATest {
         description.addTauMappings(Arrays.asList(t0));
         description.addAcceptingState(0, 3);
         description.setInitialState(0, 1);
-        VCA<Character> vca = description.toVCA(new DefaultVPDAlphabet<>(Arrays.asList('a', 'b'), Collections.emptyList(), Collections.emptyList()));
+        VCA<?, Character> vca = description.toVCA(new DefaultVPDAlphabet<>(Arrays.asList('a', 'b'), Collections.emptyList(), Collections.emptyList()));
         assertTrue(vca.accepts(Word.fromString("aabbb")));
         assertTrue(vca.accepts(Word.fromString("ab")));
         assertFalse(vca.accepts(Word.fromString("aba")));

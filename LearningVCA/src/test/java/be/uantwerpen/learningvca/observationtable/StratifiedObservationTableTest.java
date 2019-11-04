@@ -14,7 +14,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
-import be.uantwerpen.learningvca.vca.State;
+import be.uantwerpen.learningvca.vca.DefaultVCA;
+import be.uantwerpen.learningvca.vca.Location;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.datastructure.observationtable.Row;
@@ -27,7 +28,7 @@ import net.automatalib.words.impl.DefaultVPDAlphabet;
 public class StratifiedObservationTableTest {
     private VPDAlphabet<Character> alphabet;
     private StratifiedObservationTable<Character, Boolean> table;
-    private VCA<Character> vca;
+    private DefaultVCA<Character> vca;
     private MembershipOracle<Character, Boolean> oracle;
 
     @Before
@@ -36,10 +37,10 @@ public class StratifiedObservationTableTest {
         alphabet = new DefaultVPDAlphabet<>(Arrays.asList('c', 'd'), Arrays.asList('a'), Arrays.asList('b'));
         table = new StratifiedObservationTableBoolean<>(alphabet);
 
-        vca = new VCA<>(alphabet, 1);
-        State q0 = vca.addInitialState(false);
-        State q1 = vca.addState();
-        State q2 = vca.addState(true);
+        vca = new DefaultVCA<>(alphabet, 1);
+        Location q0 = vca.addInitialLocation(false);
+        Location q1 = vca.addLocation();
+        Location q2 = vca.addLocation(true);
 
         vca.setCallSuccessor(q0, 0, 'a', q0);
         vca.setCallSuccessor(q0, 1, 'a', q0);
@@ -201,9 +202,8 @@ public class StratifiedObservationTableTest {
     public void testToVCA() {
         table.initialize(Collections.singletonList(Word.epsilon()), Collections.singletonList(Word.epsilon()), oracle);
 
-        VCA<Character> simpleVCA = table.toVCA();
+        VCA<?, Character> simpleVCA = table.toVCA();
         assertEquals(1, simpleVCA.size());
-        assertFalse(simpleVCA.getInitialLocation().isAccepting());
         assertFalse(simpleVCA.accepts(Word.epsilon()));
         assertFalse(simpleVCA.accepts(Word.fromString("a")));
         assertFalse(simpleVCA.accepts(Word.fromString("c")));
@@ -216,7 +216,7 @@ public class StratifiedObservationTableTest {
         table.addSuffix(Word.fromString("b"), 1, oracle);
         assertTrue(table.isConsistent());
 
-        VCA<Character> biggerVCA = table.toVCA();
+        VCA<?, Character> biggerVCA = table.toVCA();
         assertEquals(4, biggerVCA.size());
 
         assertTrue(biggerVCA.accepts(Word.fromString("acb")));
