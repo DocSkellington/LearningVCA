@@ -60,10 +60,10 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<?, I>,
         List<Word<I>> prefixes = new ArrayList<>(counterexample.size());
         List<Word<I>> suffixes = new ArrayList<>(counterexample.size());
         List<Integer> suffixesLevels = new ArrayList<>(counterexample.size());
-        // We skip epsilon since it is already in the representatives and the separators
-        for (int i = 1 ; i < counterexample.size() ; i++) {
-            prefixes.add(counterexample.subWord(0, i + 1)); // upper bound is exclusive
-            Word<I> suffix = counterexample.subWord(i + 1);
+        for (int i = 0; i <= counterexample.size(); i++) {
+            Word<I> prefix = counterexample.subWord(0, i);
+            Word<I> suffix = counterexample.subWord(i);
+            prefixes.add(prefix);
             suffixes.add(suffix);
             suffixesLevels.add(ComputeCounterValue.computeCounterValue(suffix, alphabet));
         }
@@ -100,6 +100,7 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<?, I>,
 
     /**
      * Learns the behavior graph up to the given threshold
+     * 
      * @param t The threshold
      * @return The limited behavior graph learnt
      */
@@ -113,7 +114,7 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<?, I>,
                 List<Word<I>> prefixes = new ArrayList<>(counterexampleWord.size());
                 List<Word<I>> suffixes = new ArrayList<>(counterexampleWord.size());
                 List<Integer> suffixesLevels = new ArrayList<>(counterexampleWord.size());
-                for (int i = 0 ; i < counterexampleWord.size() ; i++) {
+                for (int i = 0 ; i <= counterexampleWord.size() ; i++) {
                     Word<I> prefix = counterexampleWord.subWord(0, i);
                     Word<I> suffix = counterexampleWord.subWord(i);
                     prefixes.add(prefix);
