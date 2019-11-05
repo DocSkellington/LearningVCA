@@ -8,6 +8,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import be.uantwerpen.learningvca.util.ComputeCounterValue;
@@ -715,7 +716,7 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
                     StratifiedObservationRow<I> longPrefixRow = shortPrefixRow.getSuccessor(alphabet.getSymbolIndex(symbol));
                     
                     if (longPrefixRow == null) {
-                        return longPrefixRow;
+                        return createLongPrefixRow(shortPrefixRow.getLabel().append(symbol));
                     }
                     
                     // Same row content id => same information in the row => same equivalence class
@@ -782,6 +783,23 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
                 return spRow;
             }
         }
+        return null;
+    }
+
+    @Override
+    public Word<I> findDistinguishingSuffix(Inconsistency<I> inconsistency) {
+        int symIdx = getInputAlphabet().getSymbolIndex(inconsistency.getSymbol());
+        System.out.println(inconsistency.getFirstRow().getLabel() + ", " + inconsistency.getSecondRow().getLabel() + ", " + inconsistency.getSymbol());
+        Row<I> row1 = inconsistency.getFirstRow().getSuccessor(symIdx);
+        Row<I> row2 = inconsistency.getSecondRow().getSuccessor(symIdx);
+        int level = ComputeCounterValue.computeCounterValue(row1.getLabel(), alphabet);
+
+        for (int i = 0 ; i < getSuffixes(level).size() ; i++) {
+            if (!Objects.equals(cellContents(row1, i), cellContents(row2, i))) {
+                return getSuffixes(level).get(i);
+            }
+        }
+
         return null;
     }
 }
