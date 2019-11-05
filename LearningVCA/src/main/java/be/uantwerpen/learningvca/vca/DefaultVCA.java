@@ -52,6 +52,9 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
 
     @Override
     public boolean isAcceptingLocation(Location loc) {
+        if (loc == null) {
+            return false;
+        }
         return loc.isAccepting();
     }
 
@@ -153,6 +156,9 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
 
     @Override
     public int getLocationId(Location loc) {
+        if (loc == null) {
+            return -1;
+        }
         return loc.getId();
     }
 }

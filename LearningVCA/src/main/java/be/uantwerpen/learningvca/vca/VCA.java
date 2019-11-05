@@ -2,8 +2,11 @@ package be.uantwerpen.learningvca.vca;
 
 import java.security.InvalidParameterException;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -12,7 +15,10 @@ import com.google.common.collect.Iterables;
 
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.commons.util.Pair;
+import net.automatalib.graphs.Graph;
 import net.automatalib.ts.acceptors.DeterministicAcceptorTS;
+import net.automatalib.visualization.DefaultVisualizationHelper;
+import net.automatalib.visualization.VisualizationHelper;
 import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.Word;
 
@@ -22,7 +28,31 @@ import net.automatalib.words.Word;
  * @param <I> The input alphabet type
  * @author Gaëtan Staquet
  */
-public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixOutput<I, Boolean> {
+public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixOutput<I, Boolean>, Graph<L, VCA.VCAViewEdge<L, I>> {
+    /**
+     * Represents an edge.
+     * 
+     * It is used for the conversion to DOT format.
+     * @param <S> The state type
+     * @param <I> The input alphabet type
+     */
+    static class VCAViewEdge<S, I> {
+        private final I input;
+        private final int counterValue;
+        private final S target;
+
+        VCAViewEdge(I input, int counterValue, S target) {
+            this.input = input;
+            this.counterValue = counterValue;
+            this.target = target;
+        }
+
+        @Override
+        public String toString() {
+            return "(" + input + " " + counterValue + " " + target + ")";
+        }
+    }
+
     // Since DeterministicAcceptorTS and SuffixOutput both defines computeOutput, we need to explicitly define our function
     @Override
     default Boolean computeOutput(Iterable<? extends I> input) {
@@ -192,7 +222,11 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
 
         // We initialize at the accepting configurations
         for (L l : getAcceptingLocations()) {
-            states.add(Pair.of(new State<>(l, new CounterValue(0)), Word.epsilon()));
+            State<L> state = new State<>(l, new CounterValue(0));
+            if (getInitialState().equals(state)) {
+                return Word.epsilon();
+            }
+            states.add(Pair.of(state, Word.epsilon()));
         }
 
         // We compute the set of the predecessors of the configurations until:
@@ -229,5 +263,90 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
         }
 
         return null;
+    }
+
+    @Override
+    default public State<L> getTransition(State<L> state, I input) {
+        // If we are in a sink, we stay in the sink
+        if (state.isSink()) {
+            return state;
+        }
+
+        L successor = null;
+        CounterValue successorValue = null;
+        switch (getAlphabet().getSymbolType(input)) {
+        case CALL:
+            successor = getCallSuccessor(state.getLocation(), input, state.getCounterValue().toInt());
+            successorValue = state.getCounterValue().increment();
+            break;
+        case RETURN:
+            successor = getReturnSuccessor(state.getLocation(), input, state.getCounterValue().toInt());
+            successorValue = state.getCounterValue().decrement();
+            break;
+        case INTERNAL:
+            successor = getInternalSuccessor(state.getLocation(), input, state.getCounterValue().toInt());
+            successorValue = state.getCounterValue();
+            break;
+        default:
+            break;
+        }
+        return new State<L>(successor, successorValue);
+    }
+
+    @Override
+    default public Collection<VCAViewEdge<L, I>> getOutgoingEdges(L startingLoc) {
+        List<VCAViewEdge<L, I>> result = new ArrayList<>();
+
+        for (int counterValue = 0 ; counterValue <= getThreshold() ; counterValue++) {
+            for (I symbol : getAlphabet()) {
+                L successor = getSuccessor(startingLoc, symbol, counterValue);
+
+                if (successor != null) {
+                    result.add(new VCAViewEdge<>(symbol, counterValue, successor));
+                }
+            }
+        }
+
+        return result;
+    }
+
+    @Override
+    default public L getTarget(VCAViewEdge<L, I> edge) {
+        return edge.target;
+    }
+
+    @Override
+    default public Collection<L> getNodes() {
+        return Collections.unmodifiableCollection(getLocations());
+    }
+
+    @Override
+    default public VisualizationHelper<L, VCAViewEdge<L, I>> getVisualizationHelper() {
+        return new DefaultVisualizationHelper<L, VCAViewEdge<L, I>>() {
+            @Override
+            protected Collection<L> initialNodes() {
+                return Collections.singleton(getInitialLocation());
+            }
+
+            @Override
+            public boolean getNodeProperties(L node, Map<String, String> properties) {
+                super.getNodeProperties(node, properties);
+
+                properties.put(NodeAttrs.SHAPE, isAcceptingLocation(node) ? NodeShapes.DOUBLECIRCLE : NodeShapes.CIRCLE);
+                properties.put(NodeAttrs.LABEL, "q" + getLocationId(node));
+
+                return true;
+            }
+
+            @Override
+            public boolean getEdgeProperties(L src, VCAViewEdge<L, I> edge, L tgt,
+                    Map<String, String> properties) {
+                final I input = edge.input;
+                final int counterValue = edge.counterValue;
+
+                properties.put(EdgeAttrs.LABEL, input + ", " + counterValue);
+                return true;
+            }
+        };
     }
 }
