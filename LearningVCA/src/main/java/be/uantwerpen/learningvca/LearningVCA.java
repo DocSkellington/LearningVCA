@@ -124,20 +124,20 @@ public class LearningVCA {
      * @return The behavior graph
      */
     private static BehaviorGraph<Character> getBG(VPDAlphabet<Character> alphabet) {
-        TauMapping<Character> tau0 = new TauMapping<>(2);
+        TauMapping<Character> tau0 = new TauMapping<>(3);
         tau0.addTransition(1, 'a', 1);
-        // tau0.addTransition(2, 'a', 3);
-        // tau0.addTransition(3, 'a', 3);
+        tau0.addTransition(2, 'a', 3);
+        tau0.addTransition(3, 'a', 3);
 
-        TauMapping<Character> tau1 = new TauMapping<>(2);
+        TauMapping<Character> tau1 = new TauMapping<>(3);
         tau1.addTransition(1, 'a', 1);
         tau1.addTransition(1, 'b', 2);
-        // tau1.addTransition(2, 'a', 3);
+        tau1.addTransition(2, 'a', 3);
         tau1.addTransition(2, 'b', 2);
-        // tau1.addTransition(3, 'a', 3);
-        // tau1.addTransition(3, 'b', 3);
+        tau1.addTransition(3, 'a', 3);
+        tau1.addTransition(3, 'b', 3);
 
-        Description<Character> description = new Description<>(1, 1, 2);
+        Description<Character> description = new Description<>(1, 1, 3);
         description.addTauMappings(Arrays.asList(tau0, tau1));
         description.setInitialState(0, 1);
         description.addAcceptingState(0, 1);

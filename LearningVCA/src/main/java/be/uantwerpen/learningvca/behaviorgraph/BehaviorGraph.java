@@ -52,7 +52,7 @@ public class BehaviorGraph<I extends Comparable<I>> {
      * @param numberOfLoops The number of time the recurring part has been traversed
      */
     private void toDFA(CompactDFA<I> dfa, int state, int threshold, int counterValue, int mapping, int equivalenceClass, int numberOfLoops) {
-        // TODO handle loop on internal symbols
+        // TODO completely redo
         for (I a : alphabet) {
             // If there is no transition starting from equivalenceClass reading a, we skip a
             if (!description.getTauMappings().get(mapping).hasTransition(equivalenceClass, a)) {

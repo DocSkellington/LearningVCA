@@ -40,7 +40,7 @@ public class PartialEquivalenceOracle<I extends Comparable<I>> {
                 this.counterValue = counterValue;
                 this.word = word;
             }
-            
+
         }
 
         // W use the fact that BG is unique for a language
@@ -52,7 +52,7 @@ public class PartialEquivalenceOracle<I extends Comparable<I>> {
         // ^ is XOR
         if (sul.isAccepting(sul.getInitialState()) ^ hypothesis.isAccepting(hypothesis.getInitialState())) {
             return Word.epsilon();
-        } 
+        }
 
         queue.add(new InQueue(sul.getInitialState(), hypothesis.getInitialState(), 0, Word.epsilon()));
         sulToInt.put(sul.getInitialState(), 0);
@@ -122,7 +122,7 @@ public class PartialEquivalenceOracle<I extends Comparable<I>> {
     }
 
     public DefaultQuery<I, Boolean> findCounterExample(LimitedBehaviorGraph<I> hypothesis, int threshold, Collection<? extends I> inputs) {
-        DFA<?, I> sul = behaviorGraph.getDescription().toDFA(hypothesis.getInputAlphabet(), threshold);
+        DFA<?, I> sul = behaviorGraph.toDFA(threshold);
         Word<I> counterexample = findCounterExample(sul, hypothesis, threshold, hypothesis.getInputAlphabet());
 
         if (counterexample == null) {
