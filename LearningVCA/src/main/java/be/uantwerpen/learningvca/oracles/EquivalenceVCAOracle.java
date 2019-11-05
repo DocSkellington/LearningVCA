@@ -2,6 +2,8 @@ package be.uantwerpen.learningvca.oracles;
 
 import java.util.Collection;
 
+import javax.annotation.Nullable;
+
 import be.uantwerpen.learningvca.vca.ProductVCA;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.EquivalenceOracle;
@@ -11,6 +13,7 @@ import net.automatalib.words.Word;
 
 /**
  * Equivalence query between two VCAs
+ * 
  * @param <I> Input alphabet type
  * @author Gaëtan Staquet
  */
@@ -22,10 +25,14 @@ public class EquivalenceVCAOracle<I> implements EquivalenceOracle<VCA<?, I>, I, 
     }
 
     @Override
+    @Nullable
     public DefaultQuery<I, Boolean> findCounterExample(VCA<?, I> hypothesis, Collection<? extends I> inputs) {
-        ProductVCA<?, ?, I> productVCA = new ProductVCA<>(sul.getAlphabet(), sul, hypothesis, AcceptanceCombiner.XOR);
+        VCA<?, I> productVCA = new ProductVCA<>(sul.getAlphabet(), sul, hypothesis, AcceptanceCombiner.XOR);
         Word<I> counterexample = productVCA.getAcceptedWord();
-        return new DefaultQuery<>(counterexample == null ? Word.epsilon() : counterexample, counterexample != null);
+        if (counterexample == null) {
+            return null;
+        }
+        return new DefaultQuery<>(counterexample);
     }
 
 }
