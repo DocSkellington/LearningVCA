@@ -8,6 +8,8 @@ import java.util.List;
 import be.uantwerpen.learningvca.vca.DefaultVCA;
 import be.uantwerpen.learningvca.vca.Location;
 import be.uantwerpen.learningvca.vca.VCA;
+import net.automatalib.automata.fsa.DFA;
+import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.words.VPDAlphabet;
 
 /**
@@ -270,5 +272,11 @@ public class Description<I extends Comparable<I>> {
             }
         }
         return builder.toString();
+    }
+
+    public DFA<?, I> toDFA(VPDAlphabet<I> alphabet, int threshold) {
+        // TODO
+        DFA<?, I> dfa = new CompactDFA<>(alphabet);
+        return dfa;
     }
 }

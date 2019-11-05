@@ -49,16 +49,22 @@ public class LearningVCA {
         VCA<?, Character> answer = null;
 
         do {
+            System.out.println("Counterexample: " + counterexample);
             if (counterexample == null) {
                 learner.startLearning();
             } else {
+                System.out.println("REFINING");
                 learner.refineHypothesis(counterexample);
+                System.out.println("REFINING DONE");
             }
+            counterexample = null;
 
             VCA<?, Character> hypothesis;
             // We test every possible description of BG_O
             while ((hypothesis = learner.getHypothesisModel()) != null) {
+                System.out.println("Hypothesis: " + hypothesis);
                 DefaultQuery<Character, Boolean> word = equivalenceVCAOracle.findCounterExample(hypothesis, alphabet);
+                System.out.println("FindCounterExample done");
 
                 if (word == null) {
                     // We have found a correct VCA
@@ -73,12 +79,17 @@ public class LearningVCA {
             }
 
             if (counterexample == null && answer == null) {
+                System.out.println("Testing with the behavior graph");
                 // We didn't find a counter example nor an appropriate VCA
-                counterexample = equivalenceVCAOracle.findCounterExample(learner.getObservationTable().toVCA(),
-                        alphabet);
+                VCA<?, Character> vca = learner.getObservationTable().toVCA();
+                System.out.println(vca);
+                // GraphDOT.write((AbstractVCA<?, Character>) vca, new FileWriter("bg.dot"));
+                counterexample = equivalenceVCAOracle.findCounterExample(vca, alphabet);
+                System.out.println(counterexample);
             }
         } while (counterexample != null);
 
+        System.out.println("Answer: " + answer);
         try {
             GraphDOT.write((AbstractVCA<?, Character>)answer, new FileWriter("output.dot"));
         } catch (IOException e) {
@@ -94,7 +105,6 @@ public class LearningVCA {
         List<Character> internalSymbols = Collections.emptyList();
         List<Character> callSymbols = Arrays.asList('a');
         List<Character> returnSymbols = Arrays.asList('b');
-
         VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<Character>(internalSymbols, callSymbols, returnSymbols);
         DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
 
