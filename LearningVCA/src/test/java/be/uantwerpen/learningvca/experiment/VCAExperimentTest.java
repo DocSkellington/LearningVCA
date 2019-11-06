@@ -1,63 +1,81 @@
 package be.uantwerpen.learningvca.experiment;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 import org.junit.Test;
 
 import be.uantwerpen.learningvca.behaviorgraph.BehaviorGraph;
-import be.uantwerpen.learningvca.behaviorgraph.Description;
-import be.uantwerpen.learningvca.behaviorgraph.TauMapping;
+import be.uantwerpen.learningvca.examples.ExampleWithInternals;
+import be.uantwerpen.learningvca.examples.ExampleWithoutInternals;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
 import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
-import be.uantwerpen.learningvca.vca.DefaultVCA;
 import be.uantwerpen.learningvca.vca.VCA;
-import be.uantwerpen.learningvca.vca.Location;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.oracle.membership.SimulatorOracle;
 import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.Word;
-import net.automatalib.words.impl.DefaultVPDAlphabet;
 
 public class VCAExperimentTest {
     @Test
     public void testWithoutInternals() {
-        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<Character>(Collections.emptyList(), Arrays.asList('a'), Arrays.asList('b'));
-        DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
+        VPDAlphabet<Character> alphabet = ExampleWithoutInternals.getAlphabet();
+        VCA<?, Character> vca = ExampleWithoutInternals.getVCA();
+        BehaviorGraph<Character> bg = ExampleWithoutInternals.getBehaviorGraph();
 
-        Location q0 = vca.addInitialLocation(true);
-        Location q1 = vca.addLocation(true);
+        MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
+        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(bg);
+        EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(vca);
 
-        vca.setCallSuccessor(q0, 0, 'a', q0);
-        vca.setCallSuccessor(q0, 1, 'a', q0);
-        vca.setReturnSuccessor(q0, 1, 'b', q1);
-        vca.setReturnSuccessor(q1, 1, 'b', q1);
+        LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
 
-        TauMapping<Character> tau0 = new TauMapping<>(3);
-        tau0.addTransition(1, 'a', 1);
-        tau0.addTransition(2, 'a', 3);
-        tau0.addTransition(3, 'a', 3);
+        VCAExperiment<Character> experiment = new VCAExperiment<>(learner, equivalenceVCAOracle, alphabet);
+        VCA<?, Character> answer = experiment.run();
+        assertNotNull(answer);
 
-        TauMapping<Character> tau1 = new TauMapping<>(3);
-        tau1.addTransition(1, 'a', 1);
-        tau1.addTransition(1, 'b', 2);
-        tau1.addTransition(2, 'a', 3);
-        tau1.addTransition(2, 'b', 2);
-        tau1.addTransition(3, 'a', 3);
-        tau1.addTransition(3, 'b', 3);
+        assertNull(equivalenceVCAOracle.findCounterExample(answer, alphabet));
 
-        Description<Character> description = new Description<>(1, 1, 3);
-        description.addTauMappings(Arrays.asList(tau0, tau1));
-        description.setInitialState(0, 1);
-        description.addAcceptingState(0, 1);
-        description.addAcceptingState(0, 2);
-        
-        BehaviorGraph<Character> bg = new BehaviorGraph<>(alphabet, description);
+        assertTrue(vca.accepts(Word.epsilon()));
+        for (int i = 1 ; i <= 100 ; i++) {
+            StringBuilder builder = new StringBuilder();
+            for (int j = 0 ; j < i ; j++) {
+                builder.append('a');
+            }
+            for (int j = 0 ; j < i ; j++) {
+                builder.append('b');
+            }
+            assertTrue(vca.accepts(Word.fromString(builder.toString())));
+        }
+
+        // Testing a lot of words to be rejected
+        for (int i = 1 ; i <= 50 ; i++) {
+            for (int j = 1 ; j <= i ; j++) {
+                for (int k = 1 ; k <= i ; k++) {
+                    StringBuilder builder = new StringBuilder();
+                    
+                    for (int l = 1 ; l <= j ; l++) {
+                        builder.append('a');
+                    }
+                    if (k == j) {
+                        continue;
+                    }
+                    for (int l = 1 ; l <= k ; l++) {
+                        builder.append('b');
+                    }
+                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testWithInternals() {
+        VPDAlphabet<Character> alphabet = ExampleWithInternals.getAlphabet();
+        VCA<?, Character> vca = ExampleWithInternals.getVCA();
+        BehaviorGraph<Character> bg = ExampleWithInternals.getBehaviorGraph();
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
         PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(bg);
@@ -72,5 +90,74 @@ public class VCAExperimentTest {
         assertNull(equivalenceVCAOracle.findCounterExample(answer, alphabet));
 
         assertTrue(answer.accepts(Word.epsilon()));
+        for (int i = 1 ; i <= 100 ; i++) {
+            StringBuilder builder = new StringBuilder();
+            for (int j = 0 ; j < i ; j++) {
+                builder.append('a');
+            }
+            builder.append('c');
+            for (int j = 0 ; j < i ; j++) {
+                builder.append('b');
+            }
+            assertTrue(vca.accepts(Word.fromString(builder.toString())));
+        }
+
+        // Testing a lot of words to be rejected
+        for (int i = 1 ; i <= 50 ; i++) {
+            for (int j = 1 ; j <= i ; j++) {
+                for (int k = 1 ; k <= i ; k++) {
+                    StringBuilder builder = new StringBuilder();
+                    
+                    for (int l = 1 ; l <= j ; l++) {
+                        builder.append('a');
+                    }
+                    for (int l = 1 ; l <= k ; l++) {
+                        builder.append('b');
+                    }
+                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                }
+
+                for (int k = 1 ; k <= i ; k++) {
+                    StringBuilder builder = new StringBuilder();
+                    
+                    builder.append('c');
+                    for (int l = 1 ; l <= j ; l++) {
+                        builder.append('a');
+                    }
+                    for (int l = 1 ; l <= k ; l++) {
+                        builder.append('b');
+                    }
+                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                }
+
+                for (int k = 1 ; k <= i ; k++) {
+                    StringBuilder builder = new StringBuilder();
+                    
+                    for (int l = 1 ; l <= j ; l++) {
+                        builder.append('a');
+                    }
+                    for (int l = 1 ; l <= k ; l++) {
+                        builder.append('b');
+                    }
+                    builder.append('c');
+                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                }
+
+                for (int k = 1 ; k <= i ; k++) {
+                    StringBuilder builder = new StringBuilder();
+                    
+                    for (int l = 1 ; l <= j ; l++) {
+                        builder.append('a');
+                    }
+                    for (int l = 1 ; l <= Math.max(2, j + k) ; l++) {
+                        builder.append('c');
+                    }
+                    for (int l = 1 ; l <= k ; l++) {
+                        builder.append('b');
+                    }
+                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                }
+            }
+        }
     }
 }
