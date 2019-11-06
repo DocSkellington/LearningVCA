@@ -1,6 +1,7 @@
 package be.uantwerpen.learningvca.observationtable;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import be.uantwerpen.learningvca.behaviorgraph.LimitedBehaviorGraph;
@@ -26,9 +27,10 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
     public VCA<?, I> toVCA() {
         DefaultVCA<I> vca = new DefaultVCA<>(alphabet, maxLevel);
         Map<StratifiedObservationRow<I>, Location> rowToState = new HashMap<>();
+        List<List<StratifiedObservationRow<I>>> representatives = getUniqueRepresentatives();
 
         for (int level = 0; level <= maxLevel; level++) {
-            for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
+            for (StratifiedObservationRow<I> shortPrefixRow : representatives.get(level)) {
                 Location qi = null;
                 if (level == 0 && shortPrefixRow.getLabel() == Word.<I>epsilon()) {
                     qi = vca.addInitialLocation(cellContents(shortPrefixRow, 0));
@@ -41,7 +43,7 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
 
         // We create the transitions
         for (int level = 0; level <= maxLevel; level++) {
-            for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
+            for (StratifiedObservationRow<I> shortPrefixRow : representatives.get(level)) {
                 Location startingState = rowToState.get(shortPrefixRow);
                 for (int i = 0; i < alphabet.size(); i++) {
                     I symbol = alphabet.getSymbol(i);
@@ -80,9 +82,10 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
     public LimitedBehaviorGraph<I> toLimitedBehaviorGraph() {
         LimitedBehaviorGraph<I> limitedBehaviorGraph = new LimitedBehaviorGraph<>(alphabet, maxLevel);
         Map<StratifiedObservationRow<I>, Integer> rowToState = new HashMap<>();
+        List<List<StratifiedObservationRow<I>>> representatives = getUniqueRepresentatives();
 
         for (int level = 0; level <= maxLevel; level++) {
-            for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
+            for (StratifiedObservationRow<I> shortPrefixRow : representatives.get(level)) {
                 Integer qi = null;
                 if (level == 0 && shortPrefixRow.getLabel() == Word.<I>epsilon()) {
                     qi = limitedBehaviorGraph.addInitialState(cellContents(shortPrefixRow, 0));
@@ -96,7 +99,7 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
 
         // We create the transitions
         for (int level = 0; level <= maxLevel; level++) {
-            for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
+            for (StratifiedObservationRow<I> shortPrefixRow : representatives.get(level)) {
                 Integer startingState = rowToState.get(shortPrefixRow);
                 for (int i = 0; i < alphabet.size(); i++) {
                     I symbol = alphabet.getSymbol(i);

@@ -430,8 +430,8 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
                     else {
                         // This is the first time we see this row contents
                         // So, we just update the row contents
-                        rowContentsIdsMap.remove(rowContents);
                         fetchQueriesResults(queryIt, rowContents, newSuffixesForThisLevel.size());
+                        processContents(shortPrefixRow, rowContents);
                         rowContentsIdsMap.put(rowContents, shortPrefixRow.getRowContentId());
                         List<Integer> levels = rowContentsToLevels.get(rowContents);
                         if (levels == null) {
@@ -507,9 +507,8 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
                 else {
                     // This is the first time we see this row contents
                     // So, we just update the row contents
-                    rowContentsIdsMap.remove(rowContents);
                     fetchQueriesResults(queryIt, rowContents, newSuffixesForThisLevel.size());
-                    rowContentsIdsMap.put(rowContents, longPrefixRow.getRowContentId());
+                    processContents(longPrefixRow, rowContents);
                     List<Integer> levels = rowContentsToLevels.get(rowContents);
                     if (levels == null) {
                         levels = new ArrayList<>();
@@ -789,7 +788,6 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
     @Override
     public Word<I> findDistinguishingSuffix(Inconsistency<I> inconsistency) {
         int symIdx = getInputAlphabet().getSymbolIndex(inconsistency.getSymbol());
-        System.out.println(inconsistency.getFirstRow().getLabel() + ", " + inconsistency.getSecondRow().getLabel() + ", " + inconsistency.getSymbol());
         Row<I> row1 = inconsistency.getFirstRow().getSuccessor(symIdx);
         Row<I> row2 = inconsistency.getSecondRow().getSuccessor(symIdx);
         int level = ComputeCounterValue.computeCounterValue(row1.getLabel(), alphabet);
@@ -801,5 +799,26 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
         }
 
         return null;
+    }
+
+    /**
+     * Gives an unique representative for each short prefix row.
+     * @return A list of unique representatives by level
+     */
+    protected List<List<StratifiedObservationRow<I>>> getUniqueRepresentatives() {
+        List<List<StratifiedObservationRow<I>>> representatives = new ArrayList<>(getLevelLimit() + 1);
+
+        for (int level = 0 ; level <= getLevelLimit() ; level++) {
+            List<StratifiedObservationRow<I>> representativesLevel = new LinkedList<>();
+            for (StratifiedObservationRow<I> shortPrefixRow : shortPrefixRows.get(level)) {
+                StratifiedObservationRow<I> representative = getRepresentativeRow(shortPrefixRow);
+                if (!representativesLevel.contains(representative)) {
+                    representativesLevel.add(representative);
+                }
+            }
+            representatives.add(representativesLevel);
+        }
+
+        return representatives;
     }
 }

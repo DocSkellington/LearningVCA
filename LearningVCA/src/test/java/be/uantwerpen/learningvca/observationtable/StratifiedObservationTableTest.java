@@ -18,6 +18,7 @@ import be.uantwerpen.learningvca.vca.DefaultVCA;
 import be.uantwerpen.learningvca.vca.Location;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
+import de.learnlib.datastructure.observationtable.Inconsistency;
 import de.learnlib.datastructure.observationtable.Row;
 import de.learnlib.oracle.membership.SimulatorOracle;
 import net.automatalib.commons.smartcollections.ArrayStorage;
@@ -92,8 +93,6 @@ public class StratifiedObservationTableTest {
 
         assertNull(table.findUnclosedRow());
         assertNull(table.findInconsistency());
-
-        // TODO check that for every prefix and for suffix v, uv is in Sigma_{0, t}*?
     }
 
     @Test(expected = InvalidParameterException.class)
@@ -173,6 +172,11 @@ public class StratifiedObservationTableTest {
 
         assertFalse(table.isClosed());
         assertFalse(table.isConsistent());
+
+        Inconsistency<Character> inconsistency = table.findInconsistency();
+        assertNotNull(inconsistency);
+        Word<Character> distinguish = table.findDistinguishingSuffix(inconsistency);
+        assertNotNull(distinguish);
     }
 
     @Test
