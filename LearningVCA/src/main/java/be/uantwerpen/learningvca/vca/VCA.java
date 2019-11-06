@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import javax.annotation.Nullable;
@@ -198,12 +199,7 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
                     cv = cv.increment();
                 }
                 L successor = getSuccessor(l, symbol, cv.toInt());
-                if (successor == null) {
-                    if (state.getLocation() == null) {
-                        predecessors.add(Pair.of(new State<>(l, cv), symbol));
-                    }
-                }
-                else if (successor.equals(state.getLocation())) {
+                if (Objects.equals(successor, state.getLocation())) {
                     predecessors.add(Pair.of(new State<L>(l, cv), symbol));
                 }
             }

@@ -1,5 +1,7 @@
 package be.uantwerpen.learningvca.vca;
 
+import java.util.Objects;
+
 /**
  * A configuration (or state in LearnLib nomenclature) is a pair (location, counter value).
  * @param <L> The type of the location
@@ -78,20 +80,6 @@ public class State<L> {
             return true;
         }
 
-        if (other.location == null && this.location == null) {
-            return false;
-        }
-        else if (other.location == null || this.location == null) {
-            return false;
-        }
-
-        if (other.counter == null && this.counter == null) {
-            return false;
-        }
-        else if (other.counter == null || this.counter == null) {
-            return false;
-        }
-
-        return this.location.equals(other.location) && this.counter.equals(other.counter);
+        return Objects.equals(other.location, this.location) && Objects.equals(other.counter, this.counter);
     }
 }

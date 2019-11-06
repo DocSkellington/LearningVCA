@@ -95,20 +95,6 @@ public class TauMapping<I extends Comparable<I>> {
     }
 
     /**
-     * Checks if there is a transition from start reading input
-     * @param start The starting equivalence class
-     * @param input The input
-     * @return True iff there is a transition
-     */
-    public boolean hasTransition(int start, I input) {
-        if (!(1 <= start && start <= K)) {
-            throw new InvalidParameterException("Description of a behavior graph: start must be in [" + 1 + ", " + K + "]. Received: " + start);
-        }
-
-        return mapping.containsKey(new KeyMapping(start, input));
-    }
-
-    /**
      * Gets the target equivalence class of the transition from start reading input, or -1 if there is no defined transition
      * @param start The starting equivalence class
      * @param input The input
