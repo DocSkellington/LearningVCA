@@ -9,16 +9,14 @@ import java.util.List;
 import be.uantwerpen.learningvca.behaviorgraph.BehaviorGraph;
 import be.uantwerpen.learningvca.behaviorgraph.Description;
 import be.uantwerpen.learningvca.behaviorgraph.TauMapping;
+import be.uantwerpen.learningvca.experiment.VCAExperiment;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
 import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
-import be.uantwerpen.learningvca.util.ComputeCounterValue;
-import be.uantwerpen.learningvca.vca.AbstractVCA;
 import be.uantwerpen.learningvca.vca.DefaultVCA;
 import be.uantwerpen.learningvca.vca.Location;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.oracle.MembershipOracle;
-import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.oracle.membership.SimulatorOracle;
 import net.automatalib.serialization.dot.GraphDOT;
 import net.automatalib.words.VPDAlphabet;
@@ -45,43 +43,14 @@ public class LearningVCA {
 
         LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
 
-        DefaultQuery<Character, Boolean> counterexample = null;
-        VCA<?, Character> answer = null;
-
-        do {
-            if (counterexample == null) {
-                learner.startLearning();
-            } else {
-                learner.refineHypothesis(counterexample);
-            }
-            counterexample = null;
-
-            VCA<?, Character> hypothesis;
-            // We test every possible description of BG_O
-            while ((hypothesis = learner.getHypothesisModel()) != null) {
-                DefaultQuery<Character, Boolean> word = equivalenceVCAOracle.findCounterExample(hypothesis, alphabet);
-
-                if (word == null) {
-                    // We have found a correct VCA
-                    answer = hypothesis;
-                    break;
-                }
-
-                if (ComputeCounterValue.computeHeight(word.getInput(), alphabet) > learner
-                        .getObservationTableLevelLimit()) {
-                    counterexample = word;
-                }
-            }
-
-            if (counterexample == null && answer == null) {
-                // We didn't find a counter example nor an appropriate VCA
-                VCA<?, Character> vca = learner.getObservationTable().toVCA();
-                counterexample = equivalenceVCAOracle.findCounterExample(vca, alphabet);
-            }
-        } while (counterexample != null);
+        VCAExperiment<Character> experiment = new VCAExperiment<>(learner, equivalenceVCAOracle, alphabet);
+        experiment.setLog(true);
+        experiment.setLogModels(true);
+        experiment.setProfile(true);
+        VCA<?, Character> answer = experiment.run();
 
         try {
-            GraphDOT.write((AbstractVCA<?, Character>)answer, new FileWriter("output.dot"));
+            GraphDOT.write(answer, new FileWriter("output.dot"));
         } catch (IOException e) {
             System.out.println("Impossible to open the file 'output.dot' to write the DOT format of the VCA");
         }
