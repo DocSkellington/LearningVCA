@@ -1,5 +1,11 @@
 package be.uantwerpen.learningvca.behaviorgraph;
 
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Queue;
+
 import net.automatalib.automata.fsa.impl.compact.CompactDFA;
 import net.automatalib.words.VPDAlphabet;
 
@@ -35,77 +41,105 @@ public class BehaviorGraph<I extends Comparable<I>> {
      * @return The DFA
      */
     public CompactDFA<I> toDFA(int threshold) {
+        class Data {
+            public final StateBG stateInBG;
+            public final int numberOfLoops;
+            public final int counterValue;
+            
+            public Data(StateBG stateInBG, int numberOfLoops, int counterValue) {
+                this.stateInBG = stateInBG;
+                this.numberOfLoops = numberOfLoops;
+                this.counterValue = counterValue;
+            }
+
+            @SuppressWarnings("unchecked")
+            @Override
+            public boolean equals(Object obj) {
+                if (obj == this) {
+                    return true;
+                }
+                if (obj == null || obj.getClass() != getClass()) {
+                    return false;
+                }
+                
+                Data other = (Data)obj;
+                return other.stateInBG.equals(stateInBG) && other.numberOfLoops == numberOfLoops && other.counterValue == counterValue;
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(stateInBG, numberOfLoops, counterValue);
+            }
+        }
+
         CompactDFA<I> dfa = new CompactDFA<>(alphabet);
+
+        Map<Data, Integer> bgToState = new HashMap<>();
         StateBG initial = description.getInitialState();
-        toDFA(dfa, dfa.addInitialState(description.isAcceptingState(initial)), threshold, 0, initial.getMapping(), initial.getEquivalenceClass(), 0);
+        bgToState.put(new Data(initial, 0, 0), dfa.addInitialState(description.isAcceptingState(initial)));
+
+        Queue<Data> queue = new LinkedList<>();
+        queue.add(new Data(initial, 0, 0));
+
+        while (!queue.isEmpty()) {
+            Data current = queue.poll();
+            StateBG currentState = current.stateInBG;
+            Integer currentInDFA = bgToState.get(current);
+            TauMapping<I> currentMapping = description.getTauMappings().get(currentState.getMapping());
+
+            for (I symbol : alphabet) {
+                int targetEquivalenceClass = currentMapping.getTransition(currentState.getEquivalenceClass(), symbol);
+                if (targetEquivalenceClass == -1) {
+                    // Undefined transition
+                    continue;
+                }
+                int targetMapping = currentState.getMapping();
+                int numberOfLoops = current.numberOfLoops;
+                int counterValue = current.counterValue;
+
+                // We find the correct tau mapping
+                if (alphabet.isCallSymbol(symbol)) {
+                    // That is, if we have a call symbol and if we are at the end of the loop, we must go back at the beginning
+                    if (targetMapping == description.getOffset() + description.getPeriod() - 1) {
+                        numberOfLoops++;
+                        targetMapping = description.getOffset();
+                    }
+                    else {
+                        targetMapping++;
+                    }
+                    counterValue++;
+                }
+                else if (alphabet.isReturnSymbol(symbol)) {
+                    // And, if we have a return symbol and if we are at the beginning of the loop and if we still have to "unfold" the loops, we go back at the end
+                    if (targetMapping == description.getOffset() && numberOfLoops > 0) {
+                        numberOfLoops--;
+                        targetMapping = description.getOffset() + description.getPeriod() - 1;
+                    }
+                    else {
+                        targetMapping--;
+                    }
+                    counterValue--;
+                }
+
+                if (counterValue < 0 || threshold < counterValue) {
+                    // We remain in the correct counter values range
+                    continue;
+                }
+                
+                StateBG targetState = new StateBG(targetMapping, targetEquivalenceClass);
+                Data newData = new Data(targetState, numberOfLoops, counterValue);
+                Integer stateInDFA = null;
+                if ((stateInDFA = bgToState.getOrDefault(newData, null)) == null) {
+                    stateInDFA = dfa.addState(description.isAcceptingState(targetState));
+                    bgToState.put(newData, stateInDFA);
+                    queue.add(newData);
+                }
+
+                dfa.setTransition(currentInDFA, symbol, stateInDFA);
+            }
+        }
+
         return dfa;
     }
-    
-    /**
-     * Effectively construct the DFA.
-     * @param dfa The DFA to construct
-     * @param state The state in the DFA to expand
-     * @param threshold t
-     * @param counterValue The current counter value
-     * @param mapping The tau mapping to use
-     * @param equivalenceClass The equivalence class to use
-     * @param numberOfLoops The number of time the recurring part has been traversed
-     */
-    private void toDFA(CompactDFA<I> dfa, int state, int threshold, int counterValue, int mapping, int equivalenceClass, int numberOfLoops) {
-        // TODO completely redo
-        for (I a : alphabet) {
-            // If there is no transition starting from equivalenceClass reading a, we skip a
-            if (!description.getTauMappings().get(mapping).hasTransition(equivalenceClass, a)) {
-                continue;
-            }
 
-            // We compute the counter value after reading a
-            int newCounterValue = counterValue;
-            if (alphabet.isCallSymbol(a)) {
-                newCounterValue++;
-            }
-            else if (alphabet.isReturnSymbol(a)) {
-                newCounterValue--;
-            }
-
-            // If the counter value exceeds the threshold, we do not follow the transition
-            if (newCounterValue > threshold) {
-                continue;
-            }
-
-            // We compute the next tau mapping to use
-            int nextMapping = mapping;
-            int nextNumberOfLoops = numberOfLoops;
-            if (alphabet.isCallSymbol(a)) {
-                // If a is a call symbol, we must increase the tau index
-                nextMapping = mapping + 1;
-                // However, if we are at the end of the recurring part, we must go back at the beginning
-                if (nextMapping >= description.getOffset() + description.getPeriod()) {
-                    nextMapping = description.getOffset();
-                    nextNumberOfLoops++;
-                }
-            }
-            else if (alphabet.isReturnSymbol(a)) {
-                // If a is a return, we must decrease the tau index
-                nextMapping = mapping - 1;
-                // However, if we are at the beginning of the recurring part and if we have gone through at least one loop, we must go back at the end of the recurring part
-                if (numberOfLoops > 0 && nextMapping < description.getOffset()) {
-                    nextMapping = description.getOffset() + description.getPeriod() - 1;
-                    nextNumberOfLoops--;
-                }
-            }
-            // If a is an internal, the tau index does not change
-
-            // We follow tau_i(q, a)
-            int nextEquivalenceClass = description.getTauMappings().get(mapping).getTransition(equivalenceClass, a);
-
-            // We add a new state in the DFA
-            int newState = dfa.addState(description.isAcceptingState(nextMapping, nextEquivalenceClass));
-            // And we add the transition from state to newState
-            dfa.addTransition(state, a, newState);
-
-            // Finally, we perform a recursive call
-            toDFA(dfa, newState, threshold, newCounterValue, nextMapping, nextEquivalenceClass, nextNumberOfLoops);
-        }
-    }
 }

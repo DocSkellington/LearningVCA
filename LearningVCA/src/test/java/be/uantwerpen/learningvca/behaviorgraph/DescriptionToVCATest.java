@@ -21,7 +21,7 @@ public class DescriptionToVCATest {
 
         VCA<?, Character> vca = description.toVCA(ConstructBG.getAlphabet());
 
-        assertEquals(2, vca.size());
+        assertEquals(3, vca.size());
 
         assertTrue(vca.accepts(Arrays.asList()));
         assertTrue(vca.accepts(Arrays.asList('a', 'b')));

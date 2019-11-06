@@ -55,7 +55,7 @@ public class BehaviorGraphTest {
         BehaviorGraph<Character> bg = ConstructBG.constructBGExample();
         CompactDFA<Character> dfa = bg.toDFA(1);
 
-        assertEquals(3, dfa.size());
+        assertEquals(5, dfa.size());
 
         assertTrue(dfa.accepts(Arrays.asList()));
         assertTrue(dfa.accepts(Arrays.asList('a', 'b')));
@@ -74,20 +74,7 @@ public class BehaviorGraphTest {
         BehaviorGraph<Character> bg = ConstructBG.constructBGExample();
         CompactDFA<Character> dfa = bg.toDFA(2);
 
-        // FileWriter file = new FileWriter(new File("test.dot"));
-        // GraphDOT.write(dfa, dfa.getInputAlphabet(), file);
-
-        assertEquals(6, dfa.size());
-
-        // I assume the DFA is built in a certain order
-        // This might quickly become false
-        // assertTrue(dfa.isAccepting(0));
-        // assertFalse(dfa.isAccepting(1));
-        // assertFalse(dfa.isAccepting(2));
-        // assertFalse(dfa.isAccepting(3));
-        // assertTrue(dfa.isAccepting(4));
-        // assertTrue(dfa.isAccepting(5));
-        // assertEquals(0, dfa.getIntInitialState());
+        assertEquals(8, dfa.size());
 
         assertTrue(dfa.accepts(Arrays.asList()));
         assertTrue(dfa.accepts(Arrays.asList('a', 'b')));
