@@ -86,7 +86,7 @@ public class PartialEquivalenceOracle<I extends Comparable<I>> {
                 if (transitionInHypo == null && transitionInSul == null) {
                     continue;
                 }
-                if (transitionInSul == null || transitionInSul == null) {
+                if (transitionInHypo == null || transitionInSul == null) {
                     return word;
                 }
 
