@@ -15,6 +15,7 @@ import javax.annotation.Nullable;
 import com.google.common.collect.Iterables;
 
 import net.automatalib.automata.concepts.SuffixOutput;
+import net.automatalib.automata.fsa.DFA;
 import net.automatalib.commons.util.Pair;
 import net.automatalib.graphs.Graph;
 import net.automatalib.ts.acceptors.DeterministicAcceptorTS;
@@ -262,7 +263,7 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
     }
 
     @Override
-    default public State<L> getTransition(State<L> state, I input) {
+    default State<L> getTransition(State<L> state, I input) {
         // If we are in a sink, we stay in the sink
         if (state.isSink()) {
             return state;
@@ -289,8 +290,10 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
         return new State<L>(successor, successorValue);
     }
 
+    DFA<?, I> toLimitedBehaviorGraph(int threshold);
+
     @Override
-    default public Collection<VCAViewEdge<L, I>> getOutgoingEdges(L startingLoc) {
+    default Collection<VCAViewEdge<L, I>> getOutgoingEdges(L startingLoc) {
         List<VCAViewEdge<L, I>> result = new ArrayList<>();
 
         for (int counterValue = 0 ; counterValue <= getThreshold() ; counterValue++) {
@@ -307,17 +310,17 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
     }
 
     @Override
-    default public L getTarget(VCAViewEdge<L, I> edge) {
+    default L getTarget(VCAViewEdge<L, I> edge) {
         return edge.target;
     }
 
     @Override
-    default public Collection<L> getNodes() {
+    default Collection<L> getNodes() {
         return Collections.unmodifiableCollection(getLocations());
     }
 
     @Override
-    default public VisualizationHelper<L, VCAViewEdge<L, I>> getVisualizationHelper() {
+    default VisualizationHelper<L, VCAViewEdge<L, I>> getVisualizationHelper() {
         return new DefaultVisualizationHelper<L, VCAViewEdge<L, I>>() {
             @Override
             protected Collection<L> initialNodes() {

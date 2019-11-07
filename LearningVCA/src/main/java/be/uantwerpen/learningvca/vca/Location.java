@@ -2,6 +2,7 @@ package be.uantwerpen.learningvca.vca;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 import net.automatalib.commons.smartcollections.ArrayStorage;
 import net.automatalib.words.VPDAlphabet;
@@ -178,5 +179,10 @@ public class Location {
             this.returnTransitions.equals(other.returnTransitions) &&
             this.internalTransitions.equals(other.internalTransitions)
         ;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(m, id);
     }
 }

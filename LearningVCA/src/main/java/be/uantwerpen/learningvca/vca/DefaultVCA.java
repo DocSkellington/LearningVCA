@@ -105,7 +105,7 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
      * @param successor The successor
      */
     public void setInternalSuccessor(Location start, int counterValue, I input, Location successor) {
-        start.setInternalSuccessor(alphabet.getInternalSymbolIndex(input), counterValue, successor);
+        start.setInternalSuccessor(getAlphabet().getInternalSymbolIndex(input), counterValue, successor);
     }
 
     @Override
@@ -124,7 +124,7 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
      * @param successor The successor
      */
     public void setCallSuccessor(Location start, int counterValue, I input, Location successor) {
-        start.setCallSuccessor(alphabet.getCallSymbolIndex(input), counterValue, successor);
+        start.setCallSuccessor(getAlphabet().getCallSymbolIndex(input), counterValue, successor);
     }
 
     @Override
@@ -143,7 +143,7 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
      * @param successor The successor
      */
     public void setReturnSuccessor(Location start, int counterValue, I input, Location successor) {
-        start.setReturnSuccessor(alphabet.getReturnSymbolIndex(input), counterValue, successor);
+        start.setReturnSuccessor(getAlphabet().getReturnSymbolIndex(input), counterValue, successor);
     }
 
     @Override

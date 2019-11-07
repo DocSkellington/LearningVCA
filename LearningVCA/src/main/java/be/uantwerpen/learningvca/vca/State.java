@@ -82,4 +82,9 @@ public class State<L> {
 
         return Objects.equals(other.location, this.location) && Objects.equals(other.counter, this.counter);
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(location, counter);
+    }
 }

@@ -1,5 +1,7 @@
 package be.uantwerpen.learningvca.vca;
 
+import java.util.Objects;
+
 /**
  * The counter value.
  * @author Gaëtan Staquet
@@ -75,5 +77,10 @@ public class CounterValue {
 
         CounterValue other = (CounterValue)obj;
         return other.counter == this.counter;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(counter);
     }
 }
