@@ -57,7 +57,7 @@ public class State<L> {
 
     @Override
     public String toString() {
-        return "(" + getLocation().toString() + ", " + counter.toString() + ")";
+        return "(" + getLocation() + ", " + counter + ")";
     }
 
     @SuppressWarnings("unchecked")

@@ -9,11 +9,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.Iterables;
 
+import be.uantwerpen.learningvca.util.ComputeCounterValue;
 import net.automatalib.automata.concepts.SuffixOutput;
 import net.automatalib.automata.fsa.DFA;
 import net.automatalib.commons.util.Pair;
@@ -266,7 +271,9 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
     default State<L> getTransition(State<L> state, I input) {
         // If we are in a sink, we stay in the sink
         if (state.isSink()) {
-            return state;
+            // We still update the counter value as it eases the implementation for EquivalentStates
+            CounterValue newCV = new CounterValue(state.getCounterValue().toInt() + ComputeCounterValue.signOf(input, getAlphabet()));
+            return new State<>(state.getLocation(), newCV);
         }
 
         L successor = null;
@@ -291,6 +298,27 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
     }
 
     DFA<?, I> toLimitedBehaviorGraph(int threshold);
+
+    /**
+     * Generates every pair of (location, counter value) for every location and every counter value up to the threshold
+     * @param threshold The maximum counter value
+     * @return A list of states
+     */
+    @Nonnull
+    default public List<State<L>> getStates(int threshold) {
+        List<L> l = getLocations();
+
+        return
+            Stream.concat(l.stream(), Stream.of((L)null)).
+            map(location -> {
+                return IntStream.rangeClosed(0, threshold).mapToObj(countervalue -> {
+                    return new State<L>(location, new CounterValue(countervalue));
+                }).
+                collect(Collectors.toList());
+            }).
+            flatMap(List::stream).
+            collect(Collectors.toList());
+    }
 
     @Override
     default Collection<VCAViewEdge<L, I>> getOutgoingEdges(L startingLoc) {

@@ -6,8 +6,8 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Queue;
 
-import be.uantwerpen.learningvca.behaviorgraph.BehaviorGraph;
 import be.uantwerpen.learningvca.behaviorgraph.LimitedBehaviorGraph;
+import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.query.DefaultQuery;
 import net.automatalib.automata.fsa.DFA;
 import net.automatalib.words.VPDAlphabet;
@@ -21,10 +21,10 @@ import net.automatalib.words.Word;
  * @author Gaëtan Staquet
  */
 public class PartialEquivalenceOracle<I extends Comparable<I>> {
-    private BehaviorGraph<I> behaviorGraph;
+    private VCA<?, I> vca;
 
-    public PartialEquivalenceOracle(BehaviorGraph<I> behaviorGraph) {
-        this.behaviorGraph = behaviorGraph;
+    public PartialEquivalenceOracle(VCA<?, I> vca) {
+        this.vca = vca;
     }
 
     private <S> Word<I> findCounterExample(DFA<S, I> sul, LimitedBehaviorGraph<I> hypothesis, int threshold, VPDAlphabet<I> alphabet) {
@@ -122,7 +122,7 @@ public class PartialEquivalenceOracle<I extends Comparable<I>> {
     }
 
     public DefaultQuery<I, Boolean> findCounterExample(LimitedBehaviorGraph<I> hypothesis, int threshold, Collection<? extends I> inputs) {
-        DFA<?, I> sul = behaviorGraph.toDFA(threshold);
+        DFA<?, I> sul = vca.toLimitedBehaviorGraph(threshold);
         Word<I> counterexample = findCounterExample(sul, hypothesis, threshold, hypothesis.getInputAlphabet());
 
         if (counterexample == null) {

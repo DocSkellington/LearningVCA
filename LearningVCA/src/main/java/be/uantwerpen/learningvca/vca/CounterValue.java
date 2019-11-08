@@ -57,6 +57,10 @@ public class CounterValue {
         return counter >= 0;
     }
 
+    public boolean isBetween0AndT(int t) {
+        return 0 <= counter && counter <= t;
+    }
+
     @Override
     public String toString() {
         return "" + toInt();

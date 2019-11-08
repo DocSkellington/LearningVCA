@@ -34,7 +34,7 @@ public class LearningVCA {
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(sul);
         CounterOracle<Character, Boolean> membershipOracleCounter = new CounterOracle<>(membershipOracle, "membership queries");
-        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(behaviorGraph);
+        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(sul);
         EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(sul);
 
         LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracleCounter, partialEquivalenceOracle);

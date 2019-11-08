@@ -27,7 +27,7 @@ public class VCAExperimentTest {
         BehaviorGraph<Character> bg = ExampleWithoutInternals.getBehaviorGraph();
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
-        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(bg);
+        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(vca);
         EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(vca);
 
         LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
@@ -78,7 +78,7 @@ public class VCAExperimentTest {
         BehaviorGraph<Character> bg = ExampleWithInternals.getBehaviorGraph();
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
-        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(bg);
+        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(vca);
         EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(vca);
 
         LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
