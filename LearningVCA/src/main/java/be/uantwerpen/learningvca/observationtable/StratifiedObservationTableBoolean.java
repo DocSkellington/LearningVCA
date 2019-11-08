@@ -25,11 +25,11 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
 
     @Override
     public VCA<?, I> toVCA() {
-        DefaultVCA<I> vca = new DefaultVCA<>(alphabet, maxLevel);
+        DefaultVCA<I> vca = new DefaultVCA<>(alphabet, getLevelLimit());
         Map<StratifiedObservationRow<I>, Location> rowToState = new HashMap<>();
         List<List<StratifiedObservationRow<I>>> representatives = getUniqueRepresentatives();
 
-        for (int level = 0; level <= maxLevel; level++) {
+        for (int level = 0; level <= getLevelLimit(); level++) {
             for (StratifiedObservationRow<I> shortPrefixRow : representatives.get(level)) {
                 Location qi = null;
                 if (level == 0 && shortPrefixRow.getLabel() == Word.<I>epsilon()) {
@@ -42,7 +42,7 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
         }
 
         // We create the transitions
-        for (int level = 0; level <= maxLevel; level++) {
+        for (int level = 0; level <= getLevelLimit(); level++) {
             for (StratifiedObservationRow<I> shortPrefixRow : representatives.get(level)) {
                 Location startingState = rowToState.get(shortPrefixRow);
                 for (int i = 0; i < alphabet.size(); i++) {
@@ -58,19 +58,7 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
                     }
 
                     Location targetState = rowToState.get(equivalenceClass);
-                    switch (alphabet.getSymbolType(symbol)) {
-                    case CALL:
-                        vca.setCallSuccessor(startingState, level, symbol, targetState);
-                        break;
-                    case RETURN:
-                        vca.setReturnSuccessor(startingState, level, symbol, targetState);
-                        break;
-                    case INTERNAL:
-                        vca.setInternalSuccessor(startingState, level, symbol, targetState);
-                        break;
-                    default:
-                        break;
-                    }
+                    vca.setSuccessor(startingState, level, symbol, targetState);
                 }
             }
         }
@@ -80,11 +68,11 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
 
     @Override
     public LimitedBehaviorGraph<I> toLimitedBehaviorGraph() {
-        LimitedBehaviorGraph<I> limitedBehaviorGraph = new LimitedBehaviorGraph<>(alphabet, maxLevel);
+        LimitedBehaviorGraph<I> limitedBehaviorGraph = new LimitedBehaviorGraph<>(alphabet, getLevelLimit());
         Map<StratifiedObservationRow<I>, Integer> rowToState = new HashMap<>();
         List<List<StratifiedObservationRow<I>>> representatives = getUniqueRepresentatives();
 
-        for (int level = 0; level <= maxLevel; level++) {
+        for (int level = 0; level <= getLevelLimit(); level++) {
             for (StratifiedObservationRow<I> shortPrefixRow : representatives.get(level)) {
                 Integer qi = null;
                 if (level == 0 && shortPrefixRow.getLabel() == Word.<I>epsilon()) {
@@ -98,7 +86,7 @@ public class StratifiedObservationTableBoolean<I extends Comparable<I>>
         }
 
         // We create the transitions
-        for (int level = 0; level <= maxLevel; level++) {
+        for (int level = 0; level <= getLevelLimit(); level++) {
             for (StratifiedObservationRow<I> shortPrefixRow : representatives.get(level)) {
                 Integer startingState = rowToState.get(shortPrefixRow);
                 for (int i = 0; i < alphabet.size(); i++) {

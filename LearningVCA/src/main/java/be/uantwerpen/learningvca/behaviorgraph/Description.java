@@ -157,15 +157,7 @@ public class Description<I extends Comparable<I>> {
                     if (tau == -1) {
                         continue;
                     }
-                    if (alphabet.isCallSymbol(symbol)) {
-                        vca.setCallSuccessor(start, j, symbol, states.get(tau - 1));
-                    }
-                    else if (alphabet.isReturnSymbol(symbol)) {
-                        vca.setReturnSuccessor(start, j, symbol, states.get(tau - 1));
-                    }
-                    else {
-                        vca.setInternalSuccessor(start, j, symbol, states.get(tau - 1));
-                    }
+                    vca.setSuccessor(start, j, symbol, states.get(tau - 1));
                 }
             }
         }
@@ -238,11 +230,11 @@ public class Description<I extends Comparable<I>> {
                     if (tau == -1) {
                         continue;
                     }
+                    // Math.floorMod returns the modulus (so, it is always positive)
                     if (alphabet.isCallSymbol(a)) {
                         vca.setCallSuccessor(start, m, a, states.get(tau - 1).get(Math.floorMod(r + 1, k)));
                     }
                     else if (alphabet.isReturnSymbol(a)) {
-                        // Math.floorMod returns the modulus (so, it is always positive)
                         vca.setReturnSuccessor(start, m, a, states.get(tau - 1).get(Math.floorMod(r - 1, k)));
                     }
                     else {

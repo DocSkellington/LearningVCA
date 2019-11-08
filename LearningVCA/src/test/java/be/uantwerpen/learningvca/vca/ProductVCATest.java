@@ -22,10 +22,10 @@ public class ProductVCATest {
         DefaultVCA<Character> vca2 = new DefaultVCA<>(alphabet, 1);
         Location q0 = vca2.addInitialLocation(false);
         Location q1 = vca2.addLocation(true);
-        vca2.setCallSuccessor(q0, 0, 'a', q0);
-        vca2.setCallSuccessor(q0, 1, 'a', q0);
-        vca2.setReturnSuccessor(q0, 1, 'b', q1);
-        vca2.setReturnSuccessor(q1, 1, 'b', q1);
+        vca2.setSuccessor(q0, 0, 'a', q0);
+        vca2.setSuccessor(q0, 1, 'a', q0);
+        vca2.setSuccessor(q0, 1, 'b', q1);
+        vca2.setSuccessor(q1, 1, 'b', q1);
 
         VCA<?, Character> vca = new ProductVCA<>(alphabet, vca1, vca2, AcceptanceCombiner.XOR);
         Word<Character> w = vca.getAcceptedWord();

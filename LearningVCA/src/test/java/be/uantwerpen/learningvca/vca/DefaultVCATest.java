@@ -25,7 +25,7 @@ public class DefaultVCATest {
         assertEquals(0, vca.getThreshold());
         Location q0 = vca.addInitialLocation(true);
         assertTrue(q0.isAccepting());
-        vca.setInternalSuccessor(q0, 0, 'a', q0);
+        vca.setSuccessor(q0, 0, 'a', q0);
         return vca;
     }
 
@@ -35,7 +35,7 @@ public class DefaultVCATest {
         assertEquals(0, vca.getThreshold());
         Location q0 = vca.addInitialLocation(false);
         assertFalse(q0.isAccepting());
-        vca.setInternalSuccessor(q0, 0, 'a', q0);
+        vca.setSuccessor(q0, 0, 'a', q0);
         return vca;
     }
 
@@ -44,10 +44,10 @@ public class DefaultVCATest {
         DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
         Location q0 = vca.addInitialLocation(false);
         Location q1 = vca.addLocation(true);
-        vca.setCallSuccessor(q0, 0, 'a', q0);
-        vca.setCallSuccessor(q0, 1, 'a', q1);
-        vca.setReturnSuccessor(q0, 1, 'b', q1);
-        vca.setReturnSuccessor(q1, 1, 'b', q1);
+        vca.setSuccessor(q0, 0, 'a', q0);
+        vca.setSuccessor(q0, 1, 'a', q1);
+        vca.setSuccessor(q0, 1, 'b', q1);
+        vca.setSuccessor(q1, 1, 'b', q1);
         return vca;
     }
 
@@ -132,10 +132,10 @@ public class DefaultVCATest {
         DefaultVCA<Character> vca = new DefaultVCA<>(alphabet, 1);
         Location q0 = vca.addInitialLocation(false);
         Location q1 = vca.addLocation(true);
-        vca.setCallSuccessor(q0, 0, 'a', q0);
-        vca.setCallSuccessor(q0, 1, 'a', q1);
-        vca.setReturnSuccessor(q0, 1, 'b', q1);
-        vca.setReturnSuccessor(q1, 1, 'b', q1);
+        vca.setSuccessor(q0, 0, 'a', q0);
+        vca.setSuccessor(q0, 1, 'a', q1);
+        vca.setSuccessor(q0, 1, 'b', q1);
+        vca.setSuccessor(q1, 1, 'b', q1);
 
         List<Location> locations = vca.getAcceptingLocations();
         assertTrue(locations.get(0).equals(q1));

@@ -58,6 +58,17 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
         return loc.isAccepting();
     }
 
+
+    /**
+     * Adds a non-accepting initial location.
+     * 
+     * It overrides any previously defined initial location
+     * @return The initial location
+     */
+    public Location addInitialLocation() {
+        return addInitialLocation(false);
+    }
+
     /**
      * Adds an initial location.
      * 
@@ -95,6 +106,29 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
      */
     public void setInitialLocation(Location initialLocation) {
         this.initialLocation = initialLocation;
+    }
+
+    /**
+     * Defines the transition from start to successor when reading an input and when the counter value is equal to the given value
+     * @param start The starting state
+     * @param counterValue The value the counter must be equal to for this transition to be active
+     * @param input The input
+     * @param successor The successor
+     */
+    public void setSuccessor(Location start, int counterValue, I input, Location successor) {
+        switch (getAlphabet().getSymbolType(input)) {
+            case CALL:
+                setCallSuccessor(start, counterValue, input, successor);
+                break;
+            case RETURN:
+                setReturnSuccessor(start, counterValue, input, successor);
+                break;
+            case INTERNAL:
+                setInternalSuccessor(start, counterValue, input, successor);
+                break;
+            default:
+                break;
+        }
     }
 
     /**

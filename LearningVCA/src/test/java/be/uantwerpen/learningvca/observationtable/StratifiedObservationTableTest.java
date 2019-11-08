@@ -43,12 +43,12 @@ public class StratifiedObservationTableTest {
         Location q1 = vca.addLocation();
         Location q2 = vca.addLocation(true);
 
-        vca.setCallSuccessor(q0, 0, 'a', q0);
-        vca.setCallSuccessor(q0, 1, 'a', q0);
-        vca.setInternalSuccessor(q0, 1, 'c', q1);
-        vca.setInternalSuccessor(q1, 1, 'c', q1);
-        vca.setReturnSuccessor(q1, 1, 'b', q2);
-        vca.setReturnSuccessor(q2, 1, 'b', q2);
+        vca.setSuccessor(q0, 0, 'a', q0);
+        vca.setSuccessor(q0, 1, 'a', q0);
+        vca.setSuccessor(q0, 1, 'c', q1);
+        vca.setSuccessor(q1, 1, 'c', q1);
+        vca.setSuccessor(q1, 1, 'b', q2);
+        vca.setSuccessor(q2, 1, 'b', q2);
 
         oracle = new SimulatorOracle<>(vca);
     }

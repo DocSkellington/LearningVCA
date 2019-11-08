@@ -18,7 +18,7 @@ public class ExampleWithInternals {
     }
 
     /**
-     * Constructs a simple 1-VCA for L = {a^n c b^n | n is a natural and n is not zero}
+     * Constructs a simple 1-VCA for L = {a^n c b^n | n >= 0}
      * @return A 1-VCA
      */
     public static VCA<?, Character> getVCA() {
@@ -27,10 +27,10 @@ public class ExampleWithInternals {
         Location q0 = vca.addInitialLocation(true);
         Location q1 = vca.addLocation(true);
 
-        vca.setCallSuccessor(q0, 0, 'a', q0);
-        vca.setCallSuccessor(q0, 1, 'a', q0);
-        vca.setInternalSuccessor(q0, 1, 'c', q1);
-        vca.setReturnSuccessor(q1, 1, 'b', q1);
+        vca.setSuccessor(q0, 0, 'a', q0);
+        vca.setSuccessor(q0, 1, 'a', q0);
+        vca.setSuccessor(q0, 1, 'c', q1);
+        vca.setSuccessor(q1, 1, 'b', q1);
 
         return vca;
     }
