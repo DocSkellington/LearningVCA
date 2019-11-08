@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -231,16 +232,18 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
             states.add(Pair.of(state, Word.epsilon()));
         }
 
+        List<Pair<State<L>, Word<I>>> frontier = new LinkedList<>();
+        frontier.addAll(states);
+
         // We compute the set of the predecessors of the configurations until:
         //      - we reach a fix point; or
         //      - we reach the initial configuration
         boolean changement = true;
         while (changement) {
             changement = false;
-            List<Pair<State<L>, Word<I>>> newStates = new ArrayList<>(states.size());
-            newStates.addAll(states);
+            List<Pair<State<L>, Word<I>>> newFrontier = new LinkedList<>();
 
-            for (Pair<State<L>, Word<I>> pair : states) {
+            for (Pair<State<L>, Word<I>> pair : frontier) {
                 State<L> state = pair.getFirst();
                 Word<I> word = pair.getSecond();
                 for (Pair<State<L>, I> p : getPredecessors(state)) {
@@ -249,19 +252,20 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
                     if (getInitialState().equals(predecessor)) {
                         return word.prepend(symbol);
                     }
-                    if (predecessor.getCounterValue().toInt() > size()) {
+                    if (!predecessor.getCounterValue().isBetween0AndT(size())) {
                         continue;
                     }
 
                     Word<I> newWord = word.prepend(symbol);
-                    if (!newStates.contains(Pair.of(predecessor, newWord))) {
+                    if (!states.contains(Pair.of(predecessor, newWord))) {
                         changement = true;
-                        newStates.add(Pair.of(predecessor, newWord));
+                        states.add(Pair.of(predecessor, newWord));
+                        newFrontier.add(Pair.of(predecessor, newWord));
                     }
                 }
             }
         
-            states = newStates;
+            frontier = newFrontier;
         }
 
         return null;

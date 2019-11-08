@@ -246,6 +246,10 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
                     if (alphabet.isCallSymbol(symbol)) {
                         // If we process a call symbol, we must follow the isomorphism
                         targetState = isomorphism.inverse().get(targetState);
+                        if (targetState == null) {
+                            // We reach a state on level m + k that has no equivalent on level m
+                            return null;
+                        }
                     }
                     int targetClass = nu_mappings.get(getLevel(targetState)).get(targetState);
                     tauMapping.addTransition(startClass, symbol, targetClass);
@@ -264,7 +268,7 @@ public class LimitedBehaviorGraph<I extends Comparable<I>> extends CompactDFA<I>
      * @return The isomorphism
      */
     @Nullable
-    public BiMap<Integer, Integer> findIsomorphism(int m, int k, int startingState, BiMap<Integer, Integer> previousIsomorphism) {
+    private BiMap<Integer, Integer> findIsomorphism(int m, int k, int startingState, BiMap<Integer, Integer> previousIsomorphism) {
         class InQueue {
             public final int stateInFirst;
             public final int stateInSecond;
