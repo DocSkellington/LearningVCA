@@ -94,4 +94,9 @@ public class StratifiedObservationRow<I> implements Row<I> {
     public boolean hasContents() {
         return (rowContentId != -1);
     }
+
+    @Override
+    public String toString() {
+        return rowID + " " + label + " " + rowContentId;
+    }
 }

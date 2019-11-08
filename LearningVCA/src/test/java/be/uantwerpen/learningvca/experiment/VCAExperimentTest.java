@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import be.uantwerpen.learningvca.examples.ExampleTwoCalls;
 import be.uantwerpen.learningvca.examples.ExampleWithInternals;
 import be.uantwerpen.learningvca.examples.ExampleWithoutInternals;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
@@ -156,5 +157,24 @@ public class VCAExperimentTest {
                 }
             }
         }
+    }
+
+    @Test
+    public void testTwoCalls() {
+        // Warning: this test takes a lot of time
+        VPDAlphabet<Character> alphabet = ExampleTwoCalls.getAlphabet();
+        VCA<?, Character> vca = ExampleTwoCalls.getVCA();
+
+        MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
+        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(vca);
+        EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(vca);
+
+        LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
+
+        VCAExperiment<Character> experiment = new VCAExperiment<>(learner, equivalenceVCAOracle, alphabet);
+        VCA<?, Character> answer = experiment.run();
+        assertNotNull(answer);
+
+        assertNull(equivalenceVCAOracle.findCounterExample(answer, alphabet));
     }
 }

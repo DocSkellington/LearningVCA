@@ -109,7 +109,7 @@ public class Location {
     }
 
     /**
-     * Defines the successor of this state when reading the given call symbol with the given counter value
+     * Defines the successor of this state when reading the given return symbol with the given counter value
      * @param returnSymbolId The id of the return symbol in the alphabet
      * @param functionIndex The index of the function to set. That is, the counter value that must be read for this transition to be used
      * @param successor The successor
@@ -134,7 +134,7 @@ public class Location {
     }
 
     /**
-     * Defines the successor of this state when reading the given call symbol with the given counter value
+     * Defines the successor of this state when reading the given internal symbol with the given counter value
      * @param internalSymbolId The id of the internal symbol in the alphabet
      * @param functionIndex The index of the function to set. That is, the counter value that must be read for this transition to be used
      * @param successor The successor
