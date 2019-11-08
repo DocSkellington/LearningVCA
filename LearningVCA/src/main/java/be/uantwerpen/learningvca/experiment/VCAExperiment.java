@@ -130,7 +130,6 @@ public class VCAExperiment<I extends Comparable<I>> {
         public VCA<?, I> run() {
             rounds.increment();
             logPhase("Starting round " + rounds.getCount());
-            logPhase("Learning");
 
             profileStart(LEARNING_PROFILE_KEY);
             learner.startLearning();
@@ -171,7 +170,6 @@ public class VCAExperiment<I extends Comparable<I>> {
                 // next round ...
                 rounds.increment();
                 logPhase("Starting round " + rounds.getCount());
-                logPhase("Learning");
 
                 profileStart(LEARNING_PROFILE_KEY);
                 final boolean refined = learner.refineHypothesis(counterexample);
