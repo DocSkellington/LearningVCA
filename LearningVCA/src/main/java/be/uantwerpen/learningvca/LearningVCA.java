@@ -3,7 +3,6 @@ package be.uantwerpen.learningvca;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import be.uantwerpen.learningvca.behaviorgraph.BehaviorGraph;
 import be.uantwerpen.learningvca.examples.ExampleWithInternals;
 import be.uantwerpen.learningvca.experiment.VCAExperiment;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
@@ -30,7 +29,6 @@ public class LearningVCA {
     public static void main(String[] args) throws IOException {
         VCA<?, Character> sul = ExampleWithInternals.getVCA();
         VPDAlphabet<Character> alphabet = ExampleWithInternals.getAlphabet();
-        BehaviorGraph<Character> behaviorGraph = ExampleWithInternals.getBehaviorGraph();
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(sul);
         CounterOracle<Character, Boolean> membershipOracleCounter = new CounterOracle<>(membershipOracle, "membership queries");

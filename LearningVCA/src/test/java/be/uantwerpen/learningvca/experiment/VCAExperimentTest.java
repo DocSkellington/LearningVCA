@@ -7,7 +7,6 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
-import be.uantwerpen.learningvca.behaviorgraph.BehaviorGraph;
 import be.uantwerpen.learningvca.examples.ExampleWithInternals;
 import be.uantwerpen.learningvca.examples.ExampleWithoutInternals;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
@@ -24,7 +23,6 @@ public class VCAExperimentTest {
     public void testWithoutInternals() {
         VPDAlphabet<Character> alphabet = ExampleWithoutInternals.getAlphabet();
         VCA<?, Character> vca = ExampleWithoutInternals.getVCA();
-        BehaviorGraph<Character> bg = ExampleWithoutInternals.getBehaviorGraph();
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
         PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(vca);
@@ -75,7 +73,6 @@ public class VCAExperimentTest {
     public void testWithInternals() {
         VPDAlphabet<Character> alphabet = ExampleWithInternals.getAlphabet();
         VCA<?, Character> vca = ExampleWithInternals.getVCA();
-        BehaviorGraph<Character> bg = ExampleWithInternals.getBehaviorGraph();
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
         PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(vca);

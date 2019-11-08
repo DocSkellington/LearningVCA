@@ -10,6 +10,7 @@ import java.util.Collections;
 import org.junit.Test;
 
 import be.uantwerpen.learningvca.vca.VCA;
+import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.Word;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
@@ -17,9 +18,27 @@ public class DescriptionToVCATest {
 
     @Test
     public void descriptionToVCA() {
-        Description<Character> description = ConstructBG.constructDescription();
+        VPDAlphabet<Character> alphabet = new DefaultVPDAlphabet<>(Arrays.asList(), Arrays.asList('a'), Arrays.asList('b'));
+        TauMapping<Character> tau0 = new TauMapping<>(3);
+        tau0.addTransition(1, 'a', 1);
+        tau0.addTransition(2, 'a', 3);
+        tau0.addTransition(3, 'a', 3);
 
-        VCA<?, Character> vca = description.toVCA(ConstructBG.getAlphabet());
+        TauMapping<Character> tau1 = new TauMapping<>(3);
+        tau1.addTransition(1, 'a', 1);
+        tau1.addTransition(1, 'b', 2);
+        tau1.addTransition(2, 'a', 3);
+        tau1.addTransition(2, 'b', 2);
+        tau1.addTransition(3, 'a', 3);
+        tau1.addTransition(3, 'b', 3);
+
+        Description<Character> description = new Description<>(1, 1, 3);
+        description.addTauMappings(Arrays.asList(tau0, tau1));
+        description.setInitialState(0, 1);
+        description.addAcceptingState(0, 1);
+        description.addAcceptingState(0, 2);
+
+        VCA<?, Character> vca = description.toVCA(alphabet);
 
         assertEquals(3, vca.size());
 
