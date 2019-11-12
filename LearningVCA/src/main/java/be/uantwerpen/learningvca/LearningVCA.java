@@ -3,7 +3,7 @@ package be.uantwerpen.learningvca;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import be.uantwerpen.learningvca.examples.ExampleTwoCalls;
+import be.uantwerpen.learningvca.examples.ExampleFourDeltas;
 import be.uantwerpen.learningvca.experiment.VCAExperiment;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
 import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
@@ -27,7 +27,7 @@ public class LearningVCA {
     }
 
     public static void main(String[] args) throws IOException {
-        VCA<?, Character> sul = ExampleTwoCalls.getVCA();
+        VCA<?, Character> sul = ExampleFourDeltas.getVCA();
         VPDAlphabet<Character> alphabet = sul.getAlphabet();
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(sul);

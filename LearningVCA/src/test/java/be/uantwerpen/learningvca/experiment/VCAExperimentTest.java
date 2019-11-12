@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import be.uantwerpen.learningvca.examples.ExampleFourDeltas;
 import be.uantwerpen.learningvca.examples.ExampleInternalLoop;
 import be.uantwerpen.learningvca.examples.ExampleRegular;
 import be.uantwerpen.learningvca.examples.ExampleTwoCalls;
@@ -32,7 +33,6 @@ public class VCAExperimentTest {
         LearnerVCA<I> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
 
         VCAExperiment<I> experiment = new VCAExperiment<>(learner, equivalenceVCAOracle, alphabet);
-        experiment.setLog(true);
         VCA<?, I> answer = experiment.run();
         assertNotNull(answer);
 
@@ -172,5 +172,10 @@ public class VCAExperimentTest {
     public void testCallLoop() {
         VCA<?, Character> vca = ExampleInternalLoop.getVCA();
         execute(vca);
+    }
+
+    @Test
+    public void testFourDeltas()  {
+        execute(ExampleFourDeltas.getVCA());
     }
 }
