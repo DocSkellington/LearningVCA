@@ -84,11 +84,20 @@ final class EquivalentStates<L, I> {
         equivalentStates.put(s1, s2, false);
         equivalentStates.put(s2, s1, false);
         if (lists.contains(s1, s2)) {
-            lists.get(s1, s2).forEach(pair -> markAsDistinct(pair.getFirst(), pair.getSecond()));
+            List<Pair<State<L>, State<L>>> list = lists.get(s1, s2);
+            // For every pair in the list, we remove the pair from the list and recursively mark it
+            while (list.size() != 0) {
+                Pair<State<L>, State<L>> pair = list.remove(0);
+                markAsDistinct(pair.getFirst(), pair.getSecond());
+            }
             lists.remove(s1, s2);
         }
         if (lists.contains(s2, s1)) {
-            lists.get(s2, s1).forEach(pair -> markAsDistinct(pair.getFirst(), pair.getSecond()));
+            List<Pair<State<L>, State<L>>> list = lists.get(s2, s1);
+            while (list.size() != 0) {
+                Pair<State<L>, State<L>> pair = list.remove(0);
+                markAsDistinct(pair.getFirst(), pair.getSecond());
+            }
             lists.remove(s2, s1);
         }
     }

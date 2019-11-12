@@ -508,7 +508,12 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
                     // This is the first time we see this row contents
                     // So, we just update the row contents
                     fetchQueriesResults(queryIt, rowContents, newSuffixesForThisLevel.size());
-                    processContents(longPrefixRow, rowContents);
+                    if (processContents(longPrefixRow, rowContents)) {
+                        unclosed.add(new ArrayList<>());
+                    }
+                    if (longPrefixRow.getRowContentId() >= numberOfDistinctShortPrefixRows) {
+                        unclosed.get(longPrefixRow.getRowContentId() - numberOfDistinctShortPrefixRows).add(longPrefixRow);
+                    }
                     List<Integer> levels = rowContentsToLevels.get(rowContents);
                     if (levels == null) {
                         levels = new ArrayList<>();

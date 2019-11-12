@@ -257,7 +257,23 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
                     }
 
                     Word<I> newWord = word.prepend(symbol);
-                    if (!states.contains(Pair.of(predecessor, newWord))) {
+                    boolean expand = true;
+                    if (getAlphabet().isInternalSymbol(symbol)) {
+                        // If we have an internal symbol, we don't want to go back in an already explored state
+                        // Otherwise, we would have a never-ending loop
+                        // This is correct, since we are looking for one accepted word and internal symbols do not change the counter value
+                        // So, going back to an already seen state is a waste of time
+                        expand = states.stream().
+                            map(pa -> pa.getFirst()).
+                            filter(s -> Objects.equals(s, predecessor)).
+                            count() == 0
+                        ;
+                    }
+                    else if (states.contains(Pair.of(predecessor, newWord))) {
+                        expand = false;
+                    }
+
+                    if (expand) {
                         changement = true;
                         states.add(Pair.of(predecessor, newWord));
                         newFrontier.add(Pair.of(predecessor, newWord));
