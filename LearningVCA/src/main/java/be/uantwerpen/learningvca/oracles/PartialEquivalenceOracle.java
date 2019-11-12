@@ -23,7 +23,15 @@ public class PartialEquivalenceOracle<I extends Comparable<I>> {
         this.vca = vca;
     }
 
-    public DefaultQuery<I, Boolean> findCounterExample(LimitedBehaviorGraph<I> hypothesis, int threshold, Collection<? extends I> inputs) {
+    /**
+     * Checks if the hypothesis is equivalent to the behavior graph up to the given threshold.
+     * 
+     * If the automata are equivalent, returns null. Otherwise, returns a word that is accepted by one but not by the other.
+     * @param hypothesis The hypothesis
+     * @param threshold The threshold
+     * @return A counterexample, or null if the automata are equivalent
+     */
+    public DefaultQuery<I, Boolean> findCounterExample(LimitedBehaviorGraph<I> hypothesis, int threshold) {
         DFA<?, I> sul = vca.toLimitedBehaviorGraph(threshold);
         Word<I> counterexample = NearLinearEquivalenceTest.findSeparatingWord(sul, hypothesis, vca.getAlphabet());
 

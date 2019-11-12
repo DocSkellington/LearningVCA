@@ -148,7 +148,7 @@ public class LearnerVCA<I extends Comparable<I>> implements OTLearner<VCA<?, I>,
 
             // We compute the new limited behavior graph and check if there exists a counterexample
             limitedBehaviorGraph = stratifiedObservationTable.toLimitedBehaviorGraph();
-            counterexample = partialEquivalenceOracle.findCounterExample(limitedBehaviorGraph, stratifiedObservationTable.getLevelLimit(), alphabet);
+            counterexample = partialEquivalenceOracle.findCounterExample(limitedBehaviorGraph, stratifiedObservationTable.getLevelLimit());
         } while (counterexample != null);
 
         return limitedBehaviorGraph;
