@@ -9,6 +9,9 @@ import be.uantwerpen.learningvca.vca.VCA;
 import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
+/**
+ * 1-VCA for L = {a^n b^n | n >= 0} where 'a' is a call symbol and 'b' is a return symbol
+ */
 public class ExampleWithoutInternals {
     /**
      * Gets the pushdown alphabet with 'a' as call symbol and 'b' as return symbol

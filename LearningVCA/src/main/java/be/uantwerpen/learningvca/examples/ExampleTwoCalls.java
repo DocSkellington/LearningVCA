@@ -7,7 +7,10 @@ import be.uantwerpen.learningvca.vca.VCA;
 import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
-public class ExampleTwoCalls {
+/**
+ * 1-VCA for L = {a b^n c d^m e f^{n+m} | n, m > 0} where a, c and e are internal symbols, b and d are calls, and f is a return
+ */
+public final class ExampleTwoCalls {
     /**
      * Gets the pushdown alphabet with 'b' and 'd' as call symbols, 'f' as return symbol, and 'a', 'c' and 'e' as internal symbols
      * @return The alphabet
@@ -17,7 +20,7 @@ public class ExampleTwoCalls {
     }
 
     /**
-     * Constructs a simple 1-VCA for L = {a b^n c d^m e f^{n+m} | n, m > 0}
+     * Constructs a 1-VCA for L = {a b^n c d^m e f^{n+m} | n, m > 0}
      * @return A 1-VCA
      */
     public static VCA<?, Character> getVCA() {

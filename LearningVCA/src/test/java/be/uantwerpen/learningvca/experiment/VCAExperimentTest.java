@@ -7,6 +7,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import be.uantwerpen.learningvca.examples.ExampleInternalLoop;
+import be.uantwerpen.learningvca.examples.ExampleRegular;
 import be.uantwerpen.learningvca.examples.ExampleTwoCalls;
 import be.uantwerpen.learningvca.examples.ExampleWithInternals;
 import be.uantwerpen.learningvca.examples.ExampleWithoutInternals;
@@ -20,24 +22,30 @@ import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.Word;
 
 public class VCAExperimentTest {
-    @Test
-    public void testWithoutInternals() {
-        VPDAlphabet<Character> alphabet = ExampleWithoutInternals.getAlphabet();
-        VCA<?, Character> vca = ExampleWithoutInternals.getVCA();
+    private <I extends Comparable<I>> VCA<?, I> execute(VCA<?, I> sul) {
+        VPDAlphabet<I> alphabet = sul.getAlphabet();
 
-        MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
-        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(vca);
-        EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(vca);
+        MembershipOracle<I, Boolean> membershipOracle = new SimulatorOracle<>(sul);
+        PartialEquivalenceOracle<I> partialEquivalenceOracle = new PartialEquivalenceOracle<>(sul);
+        EquivalenceVCAOracle<I> equivalenceVCAOracle = new EquivalenceVCAOracle<>(sul);
 
-        LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
+        LearnerVCA<I> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
 
-        VCAExperiment<Character> experiment = new VCAExperiment<>(learner, equivalenceVCAOracle, alphabet);
-        VCA<?, Character> answer = experiment.run();
+        VCAExperiment<I> experiment = new VCAExperiment<>(learner, equivalenceVCAOracle, alphabet);
+        experiment.setLog(true);
+        VCA<?, I> answer = experiment.run();
         assertNotNull(answer);
 
         assertNull(equivalenceVCAOracle.findCounterExample(answer, alphabet));
+        return answer;
+    }
 
-        assertTrue(vca.accepts(Word.epsilon()));
+    @Test
+    public void testWithoutInternals() {
+        VCA<?, Character> vca = ExampleWithoutInternals.getVCA();
+        VCA<?, Character> answer = execute(vca);
+
+        assertTrue(answer.accepts(Word.epsilon()));
         for (int i = 1 ; i <= 100 ; i++) {
             StringBuilder builder = new StringBuilder();
             for (int j = 0 ; j < i ; j++) {
@@ -46,7 +54,7 @@ public class VCAExperimentTest {
             for (int j = 0 ; j < i ; j++) {
                 builder.append('b');
             }
-            assertTrue(vca.accepts(Word.fromString(builder.toString())));
+            assertTrue(answer.accepts(Word.fromString(builder.toString())));
         }
 
         // Testing a lot of words to be rejected
@@ -64,7 +72,7 @@ public class VCAExperimentTest {
                     for (int l = 1 ; l <= k ; l++) {
                         builder.append('b');
                     }
-                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                    assertFalse(answer.accepts(Word.fromString(builder.toString())));
                 }
             }
         }
@@ -72,20 +80,8 @@ public class VCAExperimentTest {
 
     @Test
     public void testWithInternals() {
-        VPDAlphabet<Character> alphabet = ExampleWithInternals.getAlphabet();
         VCA<?, Character> vca = ExampleWithInternals.getVCA();
-
-        MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
-        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(vca);
-        EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(vca);
-
-        LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
-
-        VCAExperiment<Character> experiment = new VCAExperiment<>(learner, equivalenceVCAOracle, alphabet);
-        VCA<?, Character> answer = experiment.run();
-        assertNotNull(answer);
-
-        assertNull(equivalenceVCAOracle.findCounterExample(answer, alphabet));
+        VCA<?, Character> answer = execute(vca);
 
         assertTrue(answer.accepts(Word.epsilon()));
         for (int i = 1 ; i <= 100 ; i++) {
@@ -97,7 +93,7 @@ public class VCAExperimentTest {
             for (int j = 0 ; j < i ; j++) {
                 builder.append('b');
             }
-            assertTrue(vca.accepts(Word.fromString(builder.toString())));
+            assertTrue(answer.accepts(Word.fromString(builder.toString())));
         }
 
         // Testing a lot of words to be rejected
@@ -112,7 +108,7 @@ public class VCAExperimentTest {
                     for (int l = 1 ; l <= k ; l++) {
                         builder.append('b');
                     }
-                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                    assertFalse(answer.accepts(Word.fromString(builder.toString())));
                 }
 
                 for (int k = 1 ; k <= i ; k++) {
@@ -125,7 +121,7 @@ public class VCAExperimentTest {
                     for (int l = 1 ; l <= k ; l++) {
                         builder.append('b');
                     }
-                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                    assertFalse(answer.accepts(Word.fromString(builder.toString())));
                 }
 
                 for (int k = 1 ; k <= i ; k++) {
@@ -138,7 +134,7 @@ public class VCAExperimentTest {
                         builder.append('b');
                     }
                     builder.append('c');
-                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                    assertFalse(answer.accepts(Word.fromString(builder.toString())));
                 }
 
                 for (int k = 1 ; k <= i ; k++) {
@@ -153,7 +149,7 @@ public class VCAExperimentTest {
                     for (int l = 1 ; l <= k ; l++) {
                         builder.append('b');
                     }
-                    assertFalse(vca.accepts(Word.fromString(builder.toString())));
+                    assertFalse(answer.accepts(Word.fromString(builder.toString())));
                 }
             }
         }
@@ -162,19 +158,19 @@ public class VCAExperimentTest {
     @Test
     public void testTwoCalls() {
         // Warning: this test takes a lot of time
-        VPDAlphabet<Character> alphabet = ExampleTwoCalls.getAlphabet();
         VCA<?, Character> vca = ExampleTwoCalls.getVCA();
+        execute(vca);
+    }
 
-        MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(vca);
-        PartialEquivalenceOracle<Character> partialEquivalenceOracle = new PartialEquivalenceOracle<>(vca);
-        EquivalenceVCAOracle<Character> equivalenceVCAOracle = new EquivalenceVCAOracle<>(vca);
+    @Test
+    public void testRegular() {
+        VCA<?, Character> vca = ExampleRegular.getVCA();
+        execute(vca);
+    }
 
-        LearnerVCA<Character> learner = new LearnerVCA<>(alphabet, membershipOracle, partialEquivalenceOracle);
-
-        VCAExperiment<Character> experiment = new VCAExperiment<>(learner, equivalenceVCAOracle, alphabet);
-        VCA<?, Character> answer = experiment.run();
-        assertNotNull(answer);
-
-        assertNull(equivalenceVCAOracle.findCounterExample(answer, alphabet));
+    @Test
+    public void testCallLoop() {
+        VCA<?, Character> vca = ExampleInternalLoop.getVCA();
+        execute(vca);
     }
 }
