@@ -23,6 +23,11 @@ public abstract class AbstractVCA<L, I> implements VCA<L, I> {
     }
 
     @Override
+    public String toString() {
+        return getThreshold() + "-VCA with " + size() + " states";
+    }
+
+    @Override
     public VPDAlphabet<I> getAlphabet() {
         return alphabet;
     }
