@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import be.uantwerpen.learningvca.util.ComputeCounterValue;
 import de.learnlib.api.oracle.MembershipOracle;
 import de.learnlib.api.query.DefaultQuery;
 import de.learnlib.datastructure.observationtable.Inconsistency;
 import de.learnlib.datastructure.observationtable.Row;
-import net.automatalib.words.Alphabet;
 import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.Word;
 
@@ -76,18 +76,18 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
 
     @Override
     public Word<I> transformAccessSequence(Word<I> word) {
-        // TODO Auto-generated method stub
+        // I don't know what this function is supposed to do
         return null;
     }
 
     @Override
     public boolean isAccessSequence(Word<I> word) {
-        // TODO Auto-generated method stub
+        // I don't know what this function is supposed to do
         return false;
     }
 
     @Override
-    public Alphabet<I> getInputAlphabet() {
+    public VPDAlphabet<I> getInputAlphabet() {
         return alphabet;
     }
 
@@ -101,10 +101,28 @@ public abstract class AbstractStratifiedObservationTable<I extends Comparable<I>
     }
 
     @Override
+    public Collection<StratifiedObservationRow<I>> getShortPrefixRows(int level) {
+        return shortPrefixRows.get(level);
+    }
+
+    @Override
     public Collection<Row<I>> getLongPrefixRows() {
         List<Row<I>> list = new ArrayList<>(allLongPrefixRows.size());
         list.addAll(allLongPrefixRows);
         return list;
+    }
+
+    @Override
+    public Collection<StratifiedObservationRow<I>> getLongPrefixRows(int level) {
+        return allLongPrefixRows.stream().
+            filter(row -> ComputeCounterValue.computeCounterValue(row.getLabel(), getInputAlphabet()) == level).
+            collect(Collectors.toList())
+        ;
+    }
+
+    @Override
+    public Collection<StratifiedObservationRow<I>> getAllRows(int level) {
+        return Stream.concat(getShortPrefixRows(level).stream(), getLongPrefixRows(level).stream()).collect(Collectors.toList());
     }
 
     @Override

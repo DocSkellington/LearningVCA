@@ -1,7 +1,5 @@
 package be.uantwerpen.learningvca.oracles;
 
-import java.util.Collection;
-
 import be.uantwerpen.learningvca.behaviorgraph.LimitedBehaviorGraph;
 import be.uantwerpen.learningvca.vca.VCA;
 import de.learnlib.api.query.DefaultQuery;

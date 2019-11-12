@@ -31,6 +31,24 @@ public interface StratifiedObservationTable<I extends Comparable<I>, D> extends 
      */
     List<Word<I>> getSuffixes(int level);
 
+    /**
+     * @param level The level
+     * @return The rows in the level
+     */
+    Collection<StratifiedObservationRow<I>> getAllRows(int level);
+
+    /**
+     * @param level The level
+     * @return The short prefix rows in the level
+     */
+    Collection<StratifiedObservationRow<I>> getShortPrefixRows(int level);
+
+    /**
+     * @param level The level
+     * @return The long prefix rows in the level
+     */
+    Collection<StratifiedObservationRow<I>> getLongPrefixRows(int level);
+
     @Override
     default List<List<Row<I>>> addSuffixes(Collection<? extends Word<I>> newSuffixes, MembershipOracle<I, D> oracle) {
         throw new UnsupportedOperationException("StratifiedObservationTable: you must specify the levels of the new suffixes");

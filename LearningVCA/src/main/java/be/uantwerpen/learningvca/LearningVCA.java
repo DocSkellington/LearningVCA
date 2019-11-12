@@ -3,9 +3,11 @@ package be.uantwerpen.learningvca;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import be.uantwerpen.learningvca.examples.ExampleFourDeltas;
+import be.uantwerpen.learningvca.examples.ExampleWithInternals;
 import be.uantwerpen.learningvca.experiment.VCAExperiment;
 import be.uantwerpen.learningvca.learner.LearnerVCA;
+import be.uantwerpen.learningvca.observationtable.writer.StratifiedObservationTableASCIIWriter;
+import be.uantwerpen.learningvca.observationtable.writer.StratifiedObservationTableHTMLWriter;
 import be.uantwerpen.learningvca.oracles.EquivalenceVCAOracle;
 import be.uantwerpen.learningvca.oracles.PartialEquivalenceOracle;
 import be.uantwerpen.learningvca.vca.VCA;
@@ -27,7 +29,7 @@ public class LearningVCA {
     }
 
     public static void main(String[] args) throws IOException {
-        VCA<?, Character> sul = ExampleFourDeltas.getVCA();
+        VCA<?, Character> sul = ExampleWithInternals.getVCA();
         VPDAlphabet<Character> alphabet = sul.getAlphabet();
 
         MembershipOracle<Character, Boolean> membershipOracle = new SimulatorOracle<>(sul);
@@ -59,10 +61,9 @@ public class LearningVCA {
 
         System.out.println("-------------------------------------------------------");
         
-        // TODO we should redo the functions that print the observation table to properly show the different levels
-        // System.out.println("Final observation table: ");
-        // new ObservationTableASCIIWriter<>().write(learner.getObservationTable(), System.out);
+        System.out.println("Final observation table: ");
+        new StratifiedObservationTableASCIIWriter<>().write(learner.getObservationTable(), System.out);
 
-        // OTUtils.displayHTMLInBrowser(learner.getObservationTable());
+        StratifiedObservationTableHTMLWriter.displayHTMLInBrowser(learner.getObservationTable());
     }
 }
