@@ -83,7 +83,7 @@ public class VCAExperimentTest {
         VCA<?, Character> vca = ExampleWithInternals.getVCA();
         VCA<?, Character> answer = execute(vca);
 
-        assertTrue(answer.accepts(Word.epsilon()));
+        assertFalse(answer.accepts(Word.epsilon()));
         for (int i = 1 ; i <= 100 ; i++) {
             StringBuilder builder = new StringBuilder();
             for (int j = 0 ; j < i ; j++) {

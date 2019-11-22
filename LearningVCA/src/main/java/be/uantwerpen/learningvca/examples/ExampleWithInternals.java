@@ -9,7 +9,7 @@ import net.automatalib.words.VPDAlphabet;
 import net.automatalib.words.impl.DefaultVPDAlphabet;
 
 /**
- * 1-VCA for L = {a^n c b^n | n >= 0} where 'a' is a call symbol, 'b' is a return symbol and 'c' is an internal symbol
+ * 1-VCA for L = {a^n c b^n | n > 0} where 'a' is a call symbol, 'b' is a return symbol and 'c' is an internal symbol
  */
 public final class ExampleWithInternals {
     /**
@@ -21,13 +21,13 @@ public final class ExampleWithInternals {
     }
 
     /**
-     * Constructs a simple 1-VCA for L = {a^n c b^n | n >= 0}
+     * Constructs a simple 1-VCA for L = {a^n c b^n | n > 0}
      * @return A 1-VCA
      */
     public static VCA<?, Character> getVCA() {
         DefaultVCA<Character> vca = new DefaultVCA<>(getAlphabet(), 1);
 
-        Location q0 = vca.addInitialLocation(true);
+        Location q0 = vca.addInitialLocation();
         Location q1 = vca.addLocation(true);
 
         vca.setSuccessor(q0, 0, 'a', q0);
