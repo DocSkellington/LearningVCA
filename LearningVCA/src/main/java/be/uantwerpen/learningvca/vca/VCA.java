@@ -249,29 +249,24 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
                 for (Pair<State<L>, I> p : getPredecessors(state)) {
                     State<L> predecessor = p.getFirst();
                     I symbol = p.getSecond();
+                    Word<I> newWord = word.prepend(symbol);
+
                     if (getInitialState().equals(predecessor)) {
-                        return word.prepend(symbol);
+                        return newWord;
                     }
                     if (!predecessor.getCounterValue().isBetween0AndT(size())) {
                         continue;
                     }
 
-                    Word<I> newWord = word.prepend(symbol);
-                    boolean expand = true;
-                    if (getAlphabet().isInternalSymbol(symbol)) {
-                        // If we have an internal symbol, we don't want to go back in an already explored state
-                        // Otherwise, we would have a never-ending loop
-                        // This is correct, since we are looking for one accepted word and internal symbols do not change the counter value
-                        // So, going back to an already seen state is a waste of time
-                        expand = states.stream().
-                            map(pa -> pa.getFirst()).
-                            filter(s -> Objects.equals(s, predecessor)).
-                            count() == 0
-                        ;
-                    }
-                    else if (states.contains(Pair.of(predecessor, newWord))) {
-                        expand = false;
-                    }
+                    // We don't want to go back in an already explored state
+                    // Otherwise, we would have a never-ending loop
+                    // This is correct, since we are looking for one accepted.
+                    // So, going back to an already seen state is a waste of time
+                    boolean expand = states.stream().
+                        map(pa -> pa.getFirst()).
+                        filter(s -> Objects.equals(s, predecessor)).
+                        count() == 0
+                    ;
 
                     if (expand) {
                         changement = true;
