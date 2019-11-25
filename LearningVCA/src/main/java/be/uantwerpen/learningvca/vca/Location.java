@@ -22,11 +22,15 @@ public class Location {
      */
     private final List<ArrayStorage<Location>> callTransitions;
     /**
-     * Same but for return symbols
+     * Stores the transition functions for return symbols for this location.
+     * The first list maps the counter value to the transition function to use, while the second list maps the input symbol to the target state.
+     * That is, we have N x Sigma -> Q
      */
     private final List<ArrayStorage<Location>> returnTransitions;
     /**
-     * Same but for internal symbols
+     * Stores the transition functions for internal symbols for this location.
+     * The first list maps the counter value to the transition function to use, while the second list maps the input symbol to the target state.
+     * That is, we have N x Sigma -> Q
      */
     private final List<ArrayStorage<Location>> internalTransitions;
     /**

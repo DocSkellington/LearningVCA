@@ -15,6 +15,8 @@ import net.automatalib.words.Word;
 
 /**
  * HTML writer.
+ * 
+ * The static members and functions are an adaptation of ObservationTableHTMLWriter.java from LearnLib.
  * @param <I> Alphabet input type
  * @param <D> Data type
  * @author Gaëtan Staquet
@@ -53,13 +55,13 @@ public class StratifiedObservationTableHTMLWriter<I, D> extends AbstractStratifi
     /**
      * Writes the table in an HTML file and open this file in the default browser
      * @param <I> Input alphabet type
-     * @param <E> Data type
+     * @param <D> Data type
      * @param table The table
      * @throws IOException
      * @throws UnsupportedOperationException
      */
     public static <I, D> void displayHTMLInBrowser(StratifiedObservationTable<? extends I, ? extends D> table) throws IOException, UnsupportedOperationException {
-        File tempFile = File.createTempFile("learnlib-ot", ".html");
+        File tempFile = File.createTempFile("learnlib-sot", ".html");
 
         // Doing this might cause problems if the startup delay of the browser
         // causes it to start only after the JVM has exited.

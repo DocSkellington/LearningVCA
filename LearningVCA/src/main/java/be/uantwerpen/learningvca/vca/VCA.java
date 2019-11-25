@@ -238,9 +238,9 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
         // We compute the set of the predecessors of the configurations until:
         //      - we reach a fix point; or
         //      - we reach the initial configuration
-        boolean changement = true;
-        while (changement) {
-            changement = false;
+        boolean changed = true;
+        while (changed) {
+            changed = false;
             List<Pair<State<L>, Word<I>>> newFrontier = new LinkedList<>();
 
             for (Pair<State<L>, Word<I>> pair : frontier) {
@@ -269,7 +269,7 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
                     ;
 
                     if (expand) {
-                        changement = true;
+                        changed = true;
                         states.add(Pair.of(predecessor, newWord));
                         newFrontier.add(Pair.of(predecessor, newWord));
                     }

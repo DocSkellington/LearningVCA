@@ -18,6 +18,9 @@ import net.automatalib.words.VPDAlphabet;
 public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
     private final List<Location> locations;
     private Location initialLocation;
+    /**
+     * The threshold
+     */
     private int m;
 
     /**
@@ -57,7 +60,6 @@ public class DefaultVCA<I> extends AbstractVCA<Location, I>  {
         }
         return loc.isAccepting();
     }
-
 
     /**
      * Adds a non-accepting initial location.
