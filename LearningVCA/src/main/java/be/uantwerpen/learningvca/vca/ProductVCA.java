@@ -44,6 +44,7 @@ public class ProductVCA<L1, L2, I> extends AbstractVCA<Pair<L1, L2>, I> {
         for (L2 l2 : vca2.getLocations()) {
             locations.add(Pair.of(null, l2));
         }
+        locations.add(Pair.of(null,  null));
 
         return locations;
     }
@@ -86,7 +87,7 @@ public class ProductVCA<L1, L2, I> extends AbstractVCA<Pair<L1, L2>, I> {
 
     @Override
     public int size() {
-        return vca1.size() * vca2.size() + vca1.size() + vca2.size();
+        return vca1.size() * vca2.size() + vca1.size() + vca2.size() + 1;
     }
 
 }
