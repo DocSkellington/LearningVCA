@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import be.uantwerpen.learningvca.examples.ExampleVariableThreshold;
 import be.uantwerpen.learningvca.examples.ExampleFourDeltas;
 import be.uantwerpen.learningvca.examples.ExampleInternalLoop;
 import be.uantwerpen.learningvca.examples.ExampleRegular;
@@ -177,5 +178,10 @@ public class VCAExperimentTest {
     @Test
     public void testFourDeltas()  {
         execute(ExampleFourDeltas.getVCA());
+    }
+
+    @Test
+    public void testVariableThreshold() {
+        execute(ExampleVariableThreshold.getVCA(20));
     }
 }
