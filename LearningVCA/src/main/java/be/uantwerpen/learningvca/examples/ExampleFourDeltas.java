@@ -21,8 +21,8 @@ public final class ExampleFourDeltas {
     }
 
     /**
-     * Constructs a 0-VCA for L = {a^n b^m c b^2 | n, m, l > 0 such that n - m = 2} UNION {a^n b^n | n > 0}
-     * @return A 0-VCA
+     * Constructs a 3-VCA for L = {a^n b^m c b^2 | n, m, l > 0 such that n - m = 2} UNION {a^n b^n | n > 0}
+     * @return A 3-VCA
      */
     public static VCA<?, Character> getVCA() {
         DefaultVCA<Character> vca = new DefaultVCA<>(getAlphabet(), 3);
