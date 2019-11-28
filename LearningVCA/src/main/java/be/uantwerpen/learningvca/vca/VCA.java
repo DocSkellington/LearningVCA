@@ -254,7 +254,7 @@ public interface VCA<L, I> extends DeterministicAcceptorTS<State<L>, I>, SuffixO
                     if (getInitialState().equals(predecessor)) {
                         return newWord;
                     }
-                    if (!predecessor.getCounterValue().isBetween0AndT(Math.max(size(), getThreshold()))) {
+                    if (!predecessor.getCounterValue().isBetween0AndT(size() + getThreshold())) {
                         continue;
                     }
 
