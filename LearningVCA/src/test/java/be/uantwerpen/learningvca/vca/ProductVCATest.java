@@ -1,11 +1,11 @@
 package be.uantwerpen.learningvca.vca;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertTrue;
 
 import java.util.Arrays;
 
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 import net.automatalib.util.ts.acceptors.AcceptanceCombiner;
 import net.automatalib.words.VPDAlphabet;

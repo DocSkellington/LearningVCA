@@ -31,7 +31,7 @@ The following dependencies are needed:
 
 Maven automatically downloads the following dependencies:
   - _LearnLib_ (which implies downloading _AutomataLib_ and other dependencies);
-  - _junit_; and
+  - _testng_; and
   - _logback-classic_ (for logging).
 
 ## Building

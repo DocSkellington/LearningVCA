@@ -1,18 +1,18 @@
 package be.uantwerpen.learningvca.observationtable;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
 import java.security.InvalidParameterException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Before;
-import org.junit.Test;
+import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.Test;
 
 import be.uantwerpen.learningvca.vca.DefaultVCA;
 import be.uantwerpen.learningvca.vca.Location;
@@ -32,7 +32,7 @@ public class StratifiedObservationTableTest {
     private DefaultVCA<Character> vca;
     private MembershipOracle<Character, Boolean> oracle;
 
-    @Before
+    @BeforeMethod
     public void init() {
         // We have one useless internal symbol (as it is not used by the VCA)
         alphabet = new DefaultVPDAlphabet<>(Arrays.asList('c', 'd'), Arrays.asList('a'), Arrays.asList('b'));
@@ -95,7 +95,7 @@ public class StratifiedObservationTableTest {
         assertNull(table.findInconsistency());
     }
 
-    @Test(expected = InvalidParameterException.class)
+    @Test(expectedExceptions = InvalidParameterException.class)
     public void testBadInitialisation() {
         List<Word<Character>> prefixes = Arrays.asList(Word.fromSymbols('a', 'b'));
         List<Word<Character>> suffixes = Arrays.asList(Word.epsilon());

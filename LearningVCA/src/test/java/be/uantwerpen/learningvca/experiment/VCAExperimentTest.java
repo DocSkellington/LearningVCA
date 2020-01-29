@@ -1,11 +1,11 @@
 package be.uantwerpen.learningvca.experiment;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertNotNull;
+import static org.testng.Assert.assertNull;
+import static org.testng.Assert.assertTrue;
 
-import org.junit.Test;
+import org.testng.annotations.Test;
 
 import be.uantwerpen.learningvca.examples.ExampleVariableThreshold;
 import be.uantwerpen.learningvca.examples.ExampleFourDeltas;
