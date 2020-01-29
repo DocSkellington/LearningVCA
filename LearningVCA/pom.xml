@@ -9,11 +9,29 @@
   <version>1.0</version>
 
   <name>LearningVCA</name>
+  <description>An active learning algorithm for Visibly One-Counter Automata</description>
   <url>http://www.github.com/DocSkellington/LearningVCA</url>
+  <licenses>
+    <license>
+      <name>GNU General Public License 3</name>
+      <url>https://www.gnu.org/licenses/gpl-3.0.en.html</url>
+    </license>
+  </licenses>
+  <organization>
+    <name>University of Mons (UMONS) and University of Antwerp (UAntwerpen)</name>
+  </organization>
+
+  <developers>
+    <developer>
+      <name>Gaëtan Staquet</name>
+    </developer>
+  </developers>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <maven.compiler.release>13</maven.compiler.release>
+    <maven.compiler.source>13</maven.compiler.source>
+    <maven.compiler.target>13</maven.compiler.target>
   </properties>
 
   <dependencies>
