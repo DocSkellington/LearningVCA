@@ -55,3 +55,6 @@ mvn site
   - Daniel Neider and Christof Löding. _Learning Visibly One-Counter Automata in Polynomial Time_. Tech. rep. Department of Computer Science, RWTH Aachen, 2010. url: http://sunsite.informatik.rwth-aachen.de/Publications/AIB/2010/2010-02.pdf.
   - _LearnLib_ and _AutomataLib_: https://learnlib.de/.
   - _LearnLib_'s implementation of 1-Single Entry Visibly Pushdown Automaton.
+  
+## Copyright
+See [LICENSE](LICENSE).
